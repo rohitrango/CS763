@@ -7,7 +7,7 @@ function [result_pose, composed_rot] = transformPose(rotations, pose, kinematic_
     
     % Composite rotation maintained here, one for each point
     composed_rot = zeros(size(pose, 1), 3, 3);
-    for i=1:size(composed_rot, 1),
+    for i=1:size(composed_rot, 1)
         composed_rot(i, :, :) = eye(3);
     end
     
@@ -20,7 +20,13 @@ function [result_pose, composed_rot] = transformPose(rotations, pose, kinematic_
        childIndex = kinematic_chain(boneIndex, 1);
        parentIndex = kinematic_chain(boneIndex, 2);
        composed_rot(childIndex, :, :) = squeeze(rotations(boneIndex, :, :))*squeeze(composed_rot(parentIndex, :, :));
+       
+       disp(childIndex)
+       disp(squeeze(composed_rot(childIndex, :, :)))
+       
     end
+    
+    fprintf('-----------------------------------------------------------');
 
     % Initialized the root joint
     result_pose = zeros(16, 3);
@@ -38,5 +44,7 @@ function [result_pose, composed_rot] = transformPose(rotations, pose, kinematic_
        newChildCoord = squeeze(composed_rot(childIndex, :, :))*(childCoord - parentCoord)' + result_pose(parentIndex, :)';
        result_pose(childIndex, :) = newChildCoord';
     end
+    
+    %sum((result_pose(8, :) - result_pose(9, :)).*(result_pose(9, :) - result_pose(13, :)))
     
 end

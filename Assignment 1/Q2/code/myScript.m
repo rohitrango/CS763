@@ -1,7 +1,8 @@
 close all
 clc
 clear
-im = double(imread('../input/checkerbox_sq.png'))./255;
+% im = double(imread('../input/checkerbox_sq.png'))./255;
+im = double(imread('../input/chrysler.png'))./255;
 figure
 imshow(im)
 
@@ -14,7 +15,7 @@ figure
 imshow(imD)
 
 %%
-nSteps = 2; % Fill in the number of steps here
+nSteps = 5; % Fill in the number of steps here
 imU = radUnDist(imD, k1, k2, nSteps);
 figure
 imshow(imU)

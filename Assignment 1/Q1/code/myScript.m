@@ -35,6 +35,9 @@ Joint Index, Parent Joint Index
 15,14  - Left elbow, Left shoulder
 16,15  - Left wrist, Left elbow
 %}
+close all
+clear
+clc
 
 n_joints = 16;
 
@@ -89,6 +92,19 @@ rot_mat = angles2rot(rot_angles);
 result_pose = transformPose(rot_mat, base_pose(:,:), kinematic_chain, hip_idx);
 plotPose(result_pose, kinematic_chain);
 w = waitforbuttonpress;
+
+K = 10;
+rot_angles(8, :) = [0, K*pi/180, 0];
+% rot_angles(11, :) = [0, K*pi/180, 0];
+rot_mat = angles2rot(rot_angles);
+
+
+result_pose = transformPose(rot_mat, base_pose(:,:), kinematic_chain, hip_idx);
+plotPose(result_pose, kinematic_chain);
+w = waitforbuttonpress;
+
+
+return;
 
 % Test Case 1: Sitting
 % rot_angles = zeros(n_parts, 3);
