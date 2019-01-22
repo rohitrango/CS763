@@ -21,12 +21,12 @@ function [result_pose, composed_rot] = transformPose(rotations, pose, kinematic_
        parentIndex = kinematic_chain(boneIndex, 2);
        composed_rot(childIndex, :, :) = squeeze(rotations(boneIndex, :, :))*squeeze(composed_rot(parentIndex, :, :));
        
-       disp(childIndex)
-       disp(squeeze(composed_rot(childIndex, :, :)))
+%        disp(childIndex)
+%        disp(squeeze(composed_rot(childIndex, :, :)))
        
     end
     
-    fprintf('-----------------------------------------------------------');
+%     fprintf('-----------------------------------------------------------\n');
 
     % Initialized the root joint
     result_pose = zeros(16, 3);

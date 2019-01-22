@@ -93,19 +93,6 @@ result_pose = transformPose(rot_mat, base_pose(:,:), kinematic_chain, hip_idx);
 plotPose(result_pose, kinematic_chain);
 w = waitforbuttonpress;
 
-K = 10;
-rot_angles(8, :) = [0, K*pi/180, 0];
-% rot_angles(11, :) = [0, K*pi/180, 0];
-rot_mat = angles2rot(rot_angles);
-
-
-result_pose = transformPose(rot_mat, base_pose(:,:), kinematic_chain, hip_idx);
-plotPose(result_pose, kinematic_chain);
-w = waitforbuttonpress;
-
-
-return;
-
 % Test Case 1: Sitting
 % rot_angles = zeros(n_parts, 3);
 % rot_angles(2,:) = [-90,0,0];
@@ -123,9 +110,7 @@ result_pose = transformPose(rot_mat, base_pose(:,:), kinematic_chain, hip_idx);
 plotPose(result_pose, kinematic_chain);
 w = waitforbuttonpress;
 
-
 % Test Case 2: Forward split
 load('rot_matrix.mat');
 result_pose = transformPose(rot_mat, base_pose(:,:), kinematic_chain, hip_idx);
 plotPose(result_pose, kinematic_chain);
-
