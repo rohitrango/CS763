@@ -1,8 +1,8 @@
 close all
 clc
 clear
-% im = double(imread('../input/checkerbox_sq.png'))./255;
-im = double(imread('../input/chrysler.png'))./255;
+im = double(imread('../input/checkerbox_sq.png'))./255;
+% im = double(imread('../input/chrysler.png'))./255;
 figure
 imshow(im)
 
