@@ -18,7 +18,7 @@ for i=1:num_points
 end
 
 [~, ~, V] = svd(M);
-P_lin = V(:, -1);
+P_lin = V(:, size(V, 2));
 P = zeros(3, 4);
 P(1, :) = P_lin(1 : 4);
 P(2, :) = P_lin(5 : 8);

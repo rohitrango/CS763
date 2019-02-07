@@ -7,5 +7,6 @@ function [K, R, T] = decomposeProjectionMatrix(P)
     R = R_z_pi * transpose(R_t);
     K = inv(K_inv) * R_z_pi;
     T = -1 * inv(K * R) * P(1 : 3, 4);
+    K = K / K(3, 3);
 end
 
