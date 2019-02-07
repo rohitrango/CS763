@@ -13,6 +13,7 @@ function [entropy, bestTheta, bestTx] = getJointDistribution(img, movImg, minTx,
     X(:, 1) = img(:);
     
     for tx = minTx:step_tx:maxTx,
+        fprintf('Running for tx = %f\n', tx);
         for theta = minTheta:step_theta:maxTheta,
             % Align the moving image back
             movTmpImg = imtranslate(movImg, [tx, 0]);
@@ -27,9 +28,7 @@ function [entropy, bestTheta, bestTx] = getJointDistribution(img, movImg, minTx,
             
             coordTx = (tx - minTx)/step_tx + 1;
             coordTheta = (theta - minTheta)/step_theta + 1;
-            
-            fprintf('Running for theta = %f, tx = %f\n', theta, tx);
-            
+                        
             entropy(coordTheta, coordTx) = entropyVal;
             if(entropyVal < bestVal)
                bestVal = entropyVal;
