@@ -40,8 +40,8 @@ for i=1:num_points
     p3(i, 3) = 1;
 end
 
-fprintf("length: %f\n", norm(p3(1, :) - p3(2, :)));
-fprintf("breadth: %f\n", norm(p3(3, :) - p3(4, :)));
+fprintf('length: %f\n', norm(p3(1, :) - p3(2, :)));
+fprintf('breadth: %f\n', norm(p3(3, :) - p3(4, :)));
 
 % % Helper function to display and save processed images %
 % function savefig(my_color_scale,modified_pic,title_name,file_name,is_color,to_save)
