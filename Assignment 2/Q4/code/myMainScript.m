@@ -10,7 +10,7 @@ is_color = 1;
 tic;
 %% Your code here
 
-folder_path = '../input/ledge/';
+folder_path = '../input/ownpic/';
 
 img1 = imread(strcat(folder_path,'1.jpg'));
 img2 = imread(strcat(folder_path,'2.jpg'));
