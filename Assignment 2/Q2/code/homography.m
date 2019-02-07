@@ -1,6 +1,5 @@
 function [ H ] = homography( p1, p2 )
 
-
     % constructing matrix on which to do SVD
     num_points = size(p1, 1);
     H_size = 9;

@@ -35,6 +35,7 @@ cross_ratio = (ac * bd)/(ad * bc)
 
 % Cross Ratio here = (ac * bd)/(ad * bc) = 1.0712
 % Solving the quadratic for x gives us x = 15.28 yrd
+% Thus, breadth = 44 + 15.28*2 = 74.56 yrd
 
 %% Finding the length
 
@@ -59,6 +60,7 @@ cross_ratio = (ac * bd)/(ad * bc)
 
 % Cross Ratio here = (ac * bd)/(ad * bc) = 1.0363
 % Solving the quadratic for x gives us x = 78.17 yrd
+% Thus, length = 2*18 + 78.17 = 114.17 yrd
 
 % Helper function to display and save processed images %
 function savefig(my_color_scale,modified_pic,title_name,file_name,is_color,to_save)

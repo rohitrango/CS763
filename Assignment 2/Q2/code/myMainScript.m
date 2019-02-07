@@ -39,7 +39,7 @@ for i=1:num_points
     p3(i, 2) = p3(i, 2) / p3(i, 3);
     p3(i, 3) = 1;
 end
-p3
+
 fprintf("length: %f\n", norm(p3(1, :) - p3(2, :)));
 fprintf("breadth: %f\n", norm(p3(3, :) - p3(4, :)));
 
