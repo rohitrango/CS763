@@ -10,7 +10,7 @@ is_color = 1;
 tic;
 %% Your code here
 
-folder_path = '../input/ownpic/';
+folder_path = '../input/ledge/';
 listing = dir(folder_path);
 	
 img1 = imread(strcat(folder_path,'1.jpg'));
@@ -142,8 +142,8 @@ if flag_3
 	savefig(my_color_scale,stiched_image,"Image 1 and 3",is_color)
 
 end
-	stiched_image(oy+1 : oy+y2 ,ox+1: ox+x2,:) = double(img2)/255;
-	savefig(my_color_scale,stiched_image,"Final stitched image",is_color)
+stiched_image(oy+1 : oy+y2 ,ox+1: ox+x2,:) = double(img2)/255;
+savefig(my_color_scale,stiched_image,"Final stitched image",is_color)
 
 toc;
 
