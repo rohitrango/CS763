@@ -11,10 +11,19 @@ tic;
 %% Your code here
 
 folder_path = '../input/ownpic/';
-
+listing = dir(folder_path);
+	
 img1 = imread(strcat(folder_path,'1.jpg'));
 img2 = imread(strcat(folder_path,'2.jpg'));
-img3 = imread(strcat(folder_path,'3.jpg'));
+
+flag_3 = true;
+
+img3 = img2;
+if size(listing,1) - 2 == 3
+	img3 = imread(strcat(folder_path,'3.jpg'));
+else
+	flag_3 = false;
+end
 
 img1gray = rgb2gray(img1);
 img2gray = rgb2gray(img2);
@@ -98,7 +107,7 @@ for x=1:xfin
 	end
 end
 
-savefig(my_color_scale,stiched_image,"stitched",is_color)
+savefig(my_color_scale,stiched_image,"Warped Image 1",is_color)
 
 % % Find the matching pairs between img 2 and img 3
 indexPairs = matchFeatures(f2,f3,'Unique',true);
@@ -110,29 +119,31 @@ matched_points3  = vpts3(indexPairs(:,2));
 % showMatchedFeatures(img2gray,img3gray,matched_points23,matched_points3);
 % legend('matched points 2','matched points 3');
 
-threshold = 0.5;
-H32 = ransacHomography(matched_points3,matched_points23,threshold);
-% disp(H32);
+if flag_3
+	threshold = 0.5;
+	H32 = ransacHomography(matched_points3,matched_points23,threshold);
+	% disp(H32);
 
-for x=1:xfin
-	for y=1:yfin
-		
-		proj = inv(H32)*[x-ox;y-oy;1];
-		proj = proj/proj(3);
-		proj_x = round(proj(1));
-		proj_y = round(proj(2));
+	for x=1:xfin
+		for y=1:yfin
+			
+			proj = inv(H32)*[x-ox;y-oy;1];
+			proj = proj/proj(3);
+			proj_x = round(proj(1));
+			proj_y = round(proj(2));
 
-		if (proj_x <= 0) || (proj_y <= 0) || (proj_x > x3) || (proj_y > y3)
-			continue
+			if (proj_x <= 0) || (proj_y <= 0) || (proj_x > x3) || (proj_y > y3)
+				continue
+			end
+			stiched_image(y,x,:) = double(img3(proj_y,proj_x,:))/255;
 		end
-		stiched_image(y,x,:) = double(img3(proj_y,proj_x,:))/255;
 	end
+
+	savefig(my_color_scale,stiched_image,"Image 1 and 3",is_color)
+
 end
-
-savefig(my_color_scale,stiched_image,"stitched",is_color)
-
-stiched_image(oy+1 : oy+y2 ,ox+1: ox+x2,:) = double(img2)/255;
-savefig(my_color_scale,stiched_image,"stitched",is_color)
+	stiched_image(oy+1 : oy+y2 ,ox+1: ox+x2,:) = double(img2)/255;
+	savefig(my_color_scale,stiched_image,"Final stitched image",is_color)
 
 toc;
 
