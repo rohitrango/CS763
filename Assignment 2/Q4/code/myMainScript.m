@@ -95,7 +95,7 @@ y3 = o3(1);
 for x=1:xfin
 	for y=1:yfin
 		
-		proj = inv(H12)*[x-ox;y-oy;1];
+		proj = H12\[x-ox;y-oy;1];
 		proj = proj/proj(3);
 		proj_x = round(proj(1));
 		proj_y = round(proj(2));
@@ -127,7 +127,7 @@ if flag_3
 	for x=1:xfin
 		for y=1:yfin
 			
-			proj = inv(H32)*[x-ox;y-oy;1];
+			proj = H32\[x-ox;y-oy;1];
 			proj = proj/proj(3);
 			proj_x = round(proj(1));
 			proj_y = round(proj(2));
