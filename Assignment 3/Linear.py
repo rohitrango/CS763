@@ -30,7 +30,7 @@ class Linear():
 			Not taking into account the activation function here, obviously
 			Derivative only of the unactivated output wrt the weights
 			Also, not updating the weights here, just calculating the gradients
-			Finally, the gradients are being added up for all batch_examples
+			Finally, the gradients of W,B are being added up for all batch_examples
 			Not yet normalised (Should ideally be!) as PS wants us to do it separately as BatchNorm layer class.
 		'''
 		self.gradW = torch.t(torch.matmul(torch.t(input),self.output))
