@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 
 torch.set_default_dtype(torch.double)
 
