@@ -32,8 +32,29 @@ class Linear():
 			Finally, the gradients of W,B are being added up for all batch_examples
 			Not yet normalised (Should ideally be!) as PS wants us to do it separately as BatchNorm layer class.
 		'''
-		self.gradW = torch.t(torch.matmul(torch.t(input),self.output))
+		self.gradW = torch.t(torch.matmul(torch.t(input),gradOutput))
 		self.gradB = torch.t(torch.sum(gradOutput,0))
 		self.gradInput = torch.matmul(gradOutput,self.W)
 		gradInput = self.gradInput + 0
 		return gradInput
+
+	def clearGrad(self):
+		self.gradW = torch.zeros_like(self.W)
+		self.gradB = torch.zeros_like(self.B)
+
+	def dispParam(self):
+		'''
+			Display parameters in 2D Matrix format with elements separated by spaces
+		'''
+		weight = self.W
+		bias = self.B
+		for i in range(weight.size(0)):
+			for j in range(weight[i].size(0)):
+				print(weight[i][j].item(),end=' ')
+			print()
+
+		for i in range(bias.size(0)):
+			print(weight[i].item(),end=' ')
+		print()
+		
+		print()

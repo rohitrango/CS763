@@ -24,8 +24,21 @@ class ReLU():
 			gradInput is (batch_size,num_in) and gradOutput is similar
 			This is the derivative wrt activation function, taking grad at x = 0 as 0
 		'''
-		self.gradInput = torch.max(gradOutput,torch.zeros_like(gradOutput))
+		self.gradInput = torch.max(input,torch.zeros_like(input))
 		self.gradInput[self.gradInput > 0] = 1
 		self.gradInput = self.gradInput * gradOutput
 		gradInput = self.gradInput + 0
 		return gradInput
+
+	def clearGrad(self):
+		'''
+			This is not really required ?.
+		'''
+		self.gradInput = 0
+
+	def dispParam(self):
+		'''
+			Display parameters
+		'''
+		print("ReLU Layer")
+		print()
