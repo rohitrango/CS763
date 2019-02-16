@@ -1,6 +1,4 @@
 import torch
-import Linear
-import ReLU
 
 torch.set_default_dtype(torch.double)
 
@@ -35,7 +33,6 @@ class Model():
 		gradOut = gradOutput
 		for i in range(len(self.Layers)-1,-1,-1):
 			
-			curr_layer = self.Layers[i] + 0
 			prev_layer = 0
 			inp = 0
 
@@ -44,7 +41,7 @@ class Model():
 			else:
 				inp = self.outputs[i-1]
 
-			gradOut = curr_layer.backward(inp,gradOut)
+			gradOut = self.Layers[i].backward(inp,gradOut)
 
 	def dispGradParam(self):
 		for layer in reversed(self.Layers):

@@ -33,7 +33,7 @@ class Linear():
 			Not yet normalised (Should ideally be!) as PS wants us to do it separately as BatchNorm layer class.
 		'''
 		self.gradW = torch.t(torch.matmul(torch.t(input),gradOutput))
-		self.gradB = torch.t(torch.sum(gradOutput,0))
+		self.gradB = torch.t(torch.sum(gradOutput,0).unsqueeze(0))
 		self.gradInput = torch.matmul(gradOutput,self.W)
 		gradInput = self.gradInput + 0
 		return gradInput
@@ -54,7 +54,7 @@ class Linear():
 			print()
 
 		for i in range(bias.size(0)):
-			print(weight[i].item(),end=' ')
+			print(bias[i].item(),end=' ')
 		print()
 		
 		print()
