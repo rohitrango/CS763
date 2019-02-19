@@ -84,7 +84,7 @@ class Conv:
 
 				#### Get gradient for input chunk here
 				#  N * F ------- F * C * k1 * k2
-				dx = torch.mm(gradOutChunk, flatW).reshape(self.channels_out, C, self.h, self.w)
+				dx = torch.mm(gradOutChunk, flatW).reshape(-1, C, self.h, self.w)
 				gradInput[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w] = gradInput[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w] + dx
 
 		return gradInput
