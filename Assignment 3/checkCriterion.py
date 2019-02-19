@@ -18,6 +18,8 @@ input = torch.Tensor(torchfile.load(args.i))
 target = torch.Tensor(torchfile.load(args.t))
 
 criterion = Criterion()
+loss = criterion.forward(input, target)
+print(loss)
 gradInput = criterion.backward(input, target)
 
 # INCOMPLETE

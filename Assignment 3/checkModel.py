@@ -63,6 +63,28 @@ for i in range(num_layers):
 gradInput = model.gradOutputs[0].numpy()
 gradInput = np.reshape(gradInput, input.shape)
 
+gradW_t = torchfile.load(args.ow)
+gradB_t = torchfile.load(args.ob)
+gradInput_t = torchfile.load(args.ig)
+
+mse_W = 0.0
+for i in range(len(gradW)):
+	mse_W += np.mean((gradW - gradW_t) ** 2)
+
+mse_W /= len(gradW)
+
+mse_B = 0.0
+for i in range(len(gradB)):
+	mse_B += np.mean((gradB - gradB_t) ** 2)
+
+mse_B /= len(gradB)
+
+mse_gradInput = 0.0
+for i in rage(len(gradInput)):
+	mse_gradInput += np.mean((gradInput - gradInput_t) ** 2)
+
+mse_gradInput /= len(gradInput)
+
 # INCOMPLETE
 # save gradInput
 

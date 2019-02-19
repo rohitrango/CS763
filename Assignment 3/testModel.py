@@ -36,3 +36,6 @@ with open(os.path.join(args.modelName, 'test_pred.txt'), 'w') as f:
 		f.write(str(i))
 		f.write(',')
 		f.write(str(pred[i]))
+
+# INCOMPLETE
+# save testPrediction.bin
