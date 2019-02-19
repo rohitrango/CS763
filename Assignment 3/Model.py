@@ -20,6 +20,7 @@ class Model:
 		output = input + 0
 		self.outputs = []
 		for layer in self.Layers:
+			# print(output.shape)
 			output = layer.forward(output)
 			self.outputs.append(output)
 		return output

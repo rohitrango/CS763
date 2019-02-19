@@ -5,6 +5,8 @@ from Linear import Linear
 from Criterion import Criterion
 from optim import MomentumOptimizer
 from ReLU import ReLU
+from Conv import Conv
+from Flatten import Flatten
 import torch
 import numpy as np
 import torchfile, pickle, os, sys
@@ -56,11 +58,18 @@ tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
 
 model = Model()
 
-model.addLayer(Linear(input_size[0], 200))
+model.addLayer(Conv(1, 16, 3, 3, stride=2))
 model.addLayer(ReLU())
-model.addLayer(Linear(200, 100))
+model.addLayer(Conv(16, 16, 3, 3, stride=2))
 model.addLayer(ReLU())
-model.addLayer(Linear(100, output_size[0]))
+model.addLayer(Conv(16, 16, 3, 3, stride=6))
+model.addLayer(ReLU())
+
+model.addLayer(Flatten())
+
+model.addLayer(Linear(16 * 4 * 4, 32))
+model.addLayer(ReLU())
+model.addLayer(Linear(32, output_size[0]))
 
 criterion = Criterion()
 

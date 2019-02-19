@@ -22,7 +22,6 @@ parser.add_argument('--batch_size', type=int, default=128, help='batch size for 
 args = parser.parse_args()
 
 input = torchfile.load(args.data)
-input = np.reshape(input, (input.shape[0], -1))
 input = input.astype(np.float32)
 min_val, max_val = 0.0, 255.0
 input = (input - min_val) / (max_val - min_val) - 0.5

@@ -1,4 +1,4 @@
-import Linear, ReLU
+import Linear, ReLU, Conv, Flatten
 import torch
 import sys
 
@@ -11,9 +11,9 @@ class MomentumOptimizer:
 
 		self.v = []
 		for layer in self.model.Layers:
-			if (type(layer) == Linear.Linear):
+			if ((type(layer) == Linear.Linear) or (type(layer) == Conv.Conv)):
 				self.v.append({'W' : torch.zeros_like(layer.W), 'B' : torch.zeros_like(layer.B)})
-			elif (type(layer) == ReLU.ReLU):
+			elif ((type(layer) == ReLU.ReLU) or (type(layer) == Flatten.Flatten)):
 				self.v.append({})
 			else:
 				raise NotImplementedError
@@ -22,7 +22,7 @@ class MomentumOptimizer:
 
 	def step(self):
 		for i in range(len(self.model.Layers)):
-			if (type(self.model.Layers[i]) == Linear.Linear):
+			if ((type(self.model.Layers[i]) == Linear.Linear) or (type(self.model.Layers[i]) == Conv.Conv)):
 				self.v[i]['W'] = self.momentum * self.v[i]['W'] + (1 - self.momentum) * self.lr * (self.model.Layers[i].gradW + self.reg * self.model.Layers[i].W)
 				self.v[i]['B'] = self.momentum * self.v[i]['B'] + (1 - self.momentum) * self.lr * (self.model.Layers[i].gradB + self.reg * self.model.Layers[i].B)
 				
