@@ -22,6 +22,5 @@ loss = criterion.forward(input, target)
 print(loss)
 gradInput = criterion.backward(input, target)
 
-# INCOMPLETE
-# save gradInput
+torch.save(gradInput, args.ig)
 
