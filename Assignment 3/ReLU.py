@@ -26,7 +26,8 @@ class ReLU():
 		'''
 		self.gradInput = torch.max(input, other=torch.Tensor([0]))
 		self.gradInput[self.gradInput > 0] = 1
-		gradInput = self.gradInput * gradOutput
+		self.gradInput = self.gradInput * gradOutput
+		gradInput = self.gradInput
 		return gradInput
 
 	def clearGrad(self):

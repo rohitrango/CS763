@@ -5,12 +5,12 @@ torch.set_default_dtype(torch.double)
 # Can't use nn package, so how do we create a torch class ? For now, a normal python class.
 class Model:
 
-	def __init__(self):
+	def __init__(self, isTrain=True):
 		'''
 			self.isTrain is optional and may not be needed, but kept for now
 		'''
 		self.Layers = []
-		self.isTrain = True
+		self.isTrain = isTrain
 		self.outputs = []
 
 	def forward(self, input):
@@ -43,7 +43,7 @@ class Model:
 			else:
 				inp = self.outputs[i-1]
 
-			gradOut = self.Layers[i].backward(inp,gradOut)
+			gradOut = self.Layers[i].backward(inp, gradOut)
 			self.gradOutputs.insert(0, gradOut)
 
 	def dispGradParam(self):

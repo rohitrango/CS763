@@ -16,7 +16,7 @@ class MomentumOptimizer:
 			elif (type(layer) == ReLU.ReLU):
 				self.v.append({})
 			else:
-				print("Not implemented")
+				raise NotImplementedError
 				sys.exit(0)
 
 
