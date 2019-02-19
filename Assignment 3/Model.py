@@ -3,7 +3,7 @@ import torch
 torch.set_default_dtype(torch.double)
 
 # Can't use nn package, so how do we create a torch class ? For now, a normal python class.
-class Model():
+class Model:
 
 	def __init__(self):
 		'''
@@ -30,7 +30,9 @@ class Model():
 			P.S. The gradients are again only calculated here, they need to be added too !
 			Need to describe a step() sort of function to add the grads to the weights and biases
 		'''
+		self.gradOutputs = []
 		gradOut = gradOutput
+		self.gradOutputs.insert(0, gradOut)
 		for i in range(len(self.Layers)-1,-1,-1):
 			
 			prev_layer = 0
@@ -42,6 +44,7 @@ class Model():
 				inp = self.outputs[i-1]
 
 			gradOut = self.Layers[i].backward(inp,gradOut)
+			self.gradOutputs.insert(0, gradOut)
 
 	def dispGradParam(self):
 		for layer in reversed(self.Layers):
@@ -50,6 +53,7 @@ class Model():
 	def clearGradParam(self):
 		for layer in self.Layers:
 			layer.clearGrad()
+			self.gradOutputs = None
 
 	def addLayer(self, layer):
 		self.Layers.append(layer)

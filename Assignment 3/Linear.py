@@ -1,16 +1,18 @@
 import torch
+import math
 
 torch.set_default_dtype(torch.double)
 
 # Can't use nn package, so how do we create a torch class ? For now, a normal python class.
-class Linear():
+class Linear:
 
 	def __init__(self, num_in, num_out):
 		'''
 			Random initialization of the weights, the gradients are calculated anyway, so initialization doesn't matter
 		'''
 		self.W = torch.randn(num_out,num_in)
-		self.B = torch.randn(num_out,1)
+		self.W = self.W * math.pow(2 / (num_in + num_out), 0.5) 			# CORR: xavier initialization: not sure if it is useful when using ReLU
+		self.B = torch.zeros(num_out,1)
 		self.gradW = torch.zeros_like(self.W)
 		self.gradB = torch.zeros_like(self.B)
 
@@ -33,11 +35,10 @@ class Linear():
 		'''
 		batch_size = input.size(0)
 		self.gradW = torch.t(torch.matmul(torch.t(input),gradOutput))
-		self.gradW = self.gradW/batch_size
-		self.gradB = torch.t(torch.sum(gradOutput,0).unsqueeze(0))
-		self.gradB = self.gradB/batch_size
-		self.gradInput = torch.matmul(gradOutput,self.W)
-		gradInput = self.gradInput + 0
+		# self.gradW = self.gradW/batch_size 								# CORR: redundant; already done in loss function
+		self.gradB = torch.t(torch.sum(gradOutput, dim=0).unsqueeze(0))
+		# self.gradB = self.gradB/batch_size								# CORR: redundant; already done in loss function
+		gradInput = torch.matmul(gradOutput,self.W)
 		return gradInput
 
 	def clearGrad(self):
@@ -50,11 +51,13 @@ class Linear():
 		'''
 		weight = self.W
 		bias = self.B
+		print('W')
 		for i in range(weight.size(0)):
 			for j in range(weight[i].size(0)):
 				print(weight[i][j].item(),end=' ')
 			print()
 
+		print('b')
 		for i in range(bias.size(0)):
 			print(bias[i].item(),end=' ')
 		print()
