@@ -74,3 +74,17 @@ def getAccuracy(model, data, labels, batch_size):
 
 	acc = acc * 1.0 / data.shape[0]
 	return acc
+
+def getPredictions(model, data, batch_size):
+	labels = np.zeros(data.shape[0])
+	data_loader = DataLoader(data, labels, batch_size)
+	pred = np.zeros(data.shape[0])
+	pos = 0
+	while (not data_loader.doneEpoch()):
+		batch_xs, batch_ys = data_loader.nextBatch()
+		batch_xs, batch_ys = torch.Tensor(batch_xs), torch.Tensor(batch_ys)
+		scores = model.forward(batch_xs)
+		pred[pos : pos + batch_size] = torch.argmax(scores, dim=1).long().numpy()
+		pos += batch_size
+	
+	return pred

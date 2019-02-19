@@ -28,7 +28,6 @@ parser.add_argument('--fraction_validation', type=float, default=0.1, help='frac
 args = parser.parse_args()
 
 input = torchfile.load(args.data)
-input = np.reshape(input, (input.shape[0], -1))
 target = torchfile.load(args.target)
 input = input.astype(np.float32)
 min_val, max_val = 0.0, 255.0
