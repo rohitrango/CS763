@@ -1,18 +1,14 @@
-import argparse
 import sys
-from Model import Model
-from Linear import Linear
-from Criterion import Criterion
-from optim import MomentumOptimizer
-from ReLU import ReLU
-import torch
-import numpy as np
-import torchfile, pickle, os, sys
-import utils
-import math
-import matplotlib.pyplot as plt 						# CHECK : finally remove this package
+sys.path.append('../')
 
-torch.set_default_dtype(torch.double)
+import torch
+import torch.nn as nn
+import numpy as np
+import argparse, os, torchfile
+import models
+import utils
+import pickle
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-modelName', help='name of model; name used to create folder to save model')
@@ -24,6 +20,10 @@ parser.add_argument('--reg', type=float, default=0.0, help='regularization weigh
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum in momentum optimizer')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size for training, testing')
 parser.add_argument('--fraction_validation', type=float, default=0.1, help='fraction of data to be used for validation')
+parser.add_argument('--use_dropout', action='store_true', help='whether to use dropout')
+parser.add_argument('--random_flip', action='store_true', help='whether to use random flip data augmentation')
+parser.add_argument('--random_crop', action='store_true', help='whether to use random crop data augmentation')
+parser.add_argument('--use_gpu', action='store_true', help='whether to use gpu for training/testing')
 
 args = parser.parse_args()
 
@@ -35,8 +35,8 @@ input = (input - min_val) / (max_val - min_val) - 0.5
 
 fraction_validation = args.fraction_validation
 
-input_size = input.shape[1 : ]
-output_size = (np.max(target) - np.min(target) + 1, )
+input_shape = input.shape[1 : ]
+output_shape = (np.max(target) - np.min(target) + 1, )
 
 np.random.seed(0)
 torch.manual_seed(0)
@@ -54,42 +54,63 @@ batch_size = args.batch_size
 
 tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
 
-model = Model()
+if (args.use_dropout):
+	dropout = (0.2, 0.5)
+else:
+	dropout = (0.0, 0.0)
 
-model.addLayer(Linear(input_size[0], 200))
-model.addLayer(ReLU())
-model.addLayer(Linear(200, 100))
-model.addLayer(ReLU())
-model.addLayer(Linear(100, output_size[0]))
+model = models.BNConvNetworkSmall(input_shape, output_shape)
 
-criterion = Criterion()
+cpu_device = torch.device('cpu')
+if (args.use_gpu):
+	fast_device = torch.device('cuda:0')
+else:
+	fast_device = cpu_device
 
-optim = MomentumOptimizer(model, lr=lr, reg=reg, momentum=momentum)
+model = model.to(fast_device)
 
+criterion = nn.CrossEntropyLoss()
+optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=reg)
+lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda epoch : 0.1 ** (epoch // 60))
 val_accs = []
 loss = []
 acc = []
 i = 0
+
+
+def getAccuracy(model, data, labels, batch_size, fast_device):
+	data_loader = utils.DataLoader(data, labels, batch_size)
+	acc = 0.0
+	while (not data_loader.doneEpoch()):
+		batch_xs, batch_ys = data_loader.nextBatch()
+		batch_xs, batch_ys = torch.Tensor(batch_xs).to(fast_device), torch.Tensor(batch_ys).to(fast_device).long()
+		scores = model(batch_xs)
+		acc += torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item()
+
+	acc = acc * 1.0 / data.shape[0]
+	return acc
+
 for epoch in range(epochs):
 	tr_loader.resetPos()
 	if (fraction_validation != 0.0):
-		val_acc = utils.getAccuracy(model, val_data, val_labels, batch_size)
+		model = model.eval()
+		val_acc = getAccuracy(model, val_data, val_labels, batch_size, fast_device)
 		val_accs.append(val_acc)
 		print("Epoch : %d, validation accuracy : %f" % (epoch, val_acc))
 	while (not tr_loader.doneEpoch()):
-		batch_xs, batch_ys = tr_loader.nextBatch()
-		batch_xs, batch_ys = torch.Tensor(batch_xs), torch.Tensor(batch_ys)
-		scores = model.forward(batch_xs)
-		cur_loss = criterion.forward(scores, batch_ys).item()
+		model = model.train()
+		batch_xs, batch_ys = tr_loader.nextBatch(random_flip=args.random_flip, random_crop=args.random_crop)
+		batch_xs, batch_ys = torch.Tensor(batch_xs).to(fast_device), torch.Tensor(batch_ys).to(fast_device).long()
+		optim.zero_grad()
+		scores = model(batch_xs)
+		cur_loss = criterion(scores, batch_ys)
 		cur_acc = torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item() * 1.0 / batch_xs.shape[0]
 		loss.append(cur_loss)
 		acc.append(cur_acc) 
-		d_scores = criterion.backward(scores, batch_ys)
-		model.backward(batch_xs, d_scores)
+		cur_loss.backward()
 		optim.step()
 		if (i % print_every == 0):
 			print("Train loss : %f, Train acc : %f" % (loss[-1], acc[-1]))
-
 		i += 1
 
 if (not os.path.exists(args.modelName)):
