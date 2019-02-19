@@ -85,6 +85,39 @@ class BNConvNetworkSmall(nn.Module):
 		y = self.linear_layers(y)
 		return y
 
+class BNConvNetworkSmallNoPadding(nn.Module):
+	def __init__(self, input_shape, output_shape):
+		super(BNConvNetworkSmallNoPadding, self).__init__()
+		input_size = np.prod(input_shape)
+		self.conv_layers = []
+		self.linear_layers = []
+		self.conv_layers.append(nn.Conv2d(in_channels=1, out_channels=16, kernel_size=3))
+		self.conv_layers.append(nn.ReLU())
+		# self.conv_layers.append(nn.BatchNorm2d(16))
+		self.conv_layers.append(nn.MaxPool2d(kernel_size=2))
+
+		self.conv_layers.append(nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3))
+		self.conv_layers.append(nn.ReLU())
+		# self.conv_layers.append(nn.BatchNorm2d(16))
+		self.conv_layers.append(nn.MaxPool2d(kernel_size=2))
+
+		self.conv_layers.append(nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3))
+		self.conv_layers.append(nn.ReLU())
+		# self.conv_layers.append(nn.BatchNorm2d(16))
+		self.conv_layers.append(nn.MaxPool2d(kernel_size=6))
+
+		self.linear_layers.append(nn.Linear(16 * 3 * 3, output_shape[0]))
+		
+		self.conv_layers = nn.Sequential(*tuple(self.conv_layers))
+		self.linear_layers = nn.Sequential(*tuple(self.linear_layers))
+
+	def forward(self, x):
+		y = x
+		y = self.conv_layers(y)
+		y = torch.reshape(y, shape=(y.shape[0], -1))
+		y = self.linear_layers(y)
+		return y
+
 class BNConvNetworkSmallNoPool(nn.Module):
 	def __init__(self, input_shape, output_shape):
 		super(BNConvNetworkSmallNoPool, self).__init__()
