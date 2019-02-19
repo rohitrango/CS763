@@ -34,25 +34,30 @@ p2 = [1141 1453;
       1844 904;
       1378 1248
      ];
-% [U, p1_normalized] = normalizePoints(p1, sqrt(3));
-% [T, p2_normalized] = normalizePoints(p2, sqrt(2));
-U = eye(4);
-T = eye(3);
-p1_normalized = p1;
-p2_normalized = p2;
+[U, p1_normalized] = normalizePoints(p1, sqrt(3));
+[T, p2_normalized] = normalizePoints(p2, sqrt(2));
+% U = eye(4);
+% T = eye(3);
+% p1_normalized = p1;
+% p2_normalized = p2;
 
 P_normalized = getProjectionMatrix(p1_normalized, p2_normalized);
 P = inv(T) * P_normalized * U;
 [K, R, T] = decomposeProjectionMatrix(P);
 
-
 p1_test = [2 0 4;
            2 3 0;
-           0 2 4
+           0 2 4;
+           5 5 0;
+           0 4 5;
+           5 0 6
           ];
 p2_test = [1028 1167;
            1325 1850;
-           1502 1195
+           1502 1195;
+           1190 2299;
+           1767 1215;
+           576 1057
           ];
 p2_pred = P * [p1_test'; ones(1, size(p1_test, 1))];
 p2_pred = p2_pred';
@@ -61,9 +66,9 @@ for i=1:size(p2_pred, 1)
 end
 
 RMSE = sqrt(mean(sum((p2_pred(:, 1:2) - p2_test).^2, 2)));
-fprintf("RMSE for test points: %f", RMSE); 
+fprintf("RMSE for test points: %f\n", RMSE); 
 imshow(img);
 hold on;
-scatter(p2_pred(:, 1), p2_pred(:, 2));
+scatter(p2_pred(:, 1), p2_pred(:, 2), 5);
 
  

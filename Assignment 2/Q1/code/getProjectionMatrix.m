@@ -23,5 +23,8 @@ P = zeros(3, 4);
 P(1, :) = P_lin(1 : 4);
 P(2, :) = P_lin(5 : 8);
 P(3, :) = P_lin(9 : 12);
+
+fprintf("condition number of M: %f\n", cond(M));
+
 end
 

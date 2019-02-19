@@ -13,7 +13,7 @@ function [U, p_normalized] = normalizePoints(p, mean_dist)
     U = U * V;
     p_normalized = ones(size(p, 1), size(p, 2) + 1);
     for i=1:size(p, 1)
-    p_normalized(i, :) = U * [p(i, :)'; 1];
+    p_normalized(i, :) = (U * [p(i, :)'; 1])';
     end
 end
 

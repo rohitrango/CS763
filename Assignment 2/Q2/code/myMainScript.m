@@ -13,8 +13,8 @@ p1(1, :) = [0, 0];
 p1(2, :) = [18, 0];
 p1(3, :) = [0, 44];
 p1(4, :) = [18, 44];
-imagesc(img); daspect([1, 1, 1]);
-impixelinfo();
+% imagesc(img); daspect([1, 1, 1]);
+% impixelinfo();
 p2(1, :) = [845, 679];
 p2(2, :) = [1059, 720];
 p2(3, :) = [963, 537];
@@ -39,7 +39,6 @@ for i=1:num_points
     p3(i, 2) = p3(i, 2) / p3(i, 3);
     p3(i, 3) = 1;
 end
-
 fprintf("length: %f\n", norm(p3(1, :) - p3(2, :)));
 fprintf("breadth: %f\n", norm(p3(3, :) - p3(4, :)));
 
