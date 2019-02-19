@@ -44,10 +44,6 @@ p2 = [1141 1453;
 P_normalized = getProjectionMatrix(p1_normalized, p2_normalized);
 P = inv(T) * P_normalized * U;
 [K, R, T] = decomposeProjectionMatrix(P);
-K
-R
-T
-
 
 p1_test = [2 0 4;
            2 3 0;
