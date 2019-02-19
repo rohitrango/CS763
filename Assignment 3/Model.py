@@ -13,6 +13,12 @@ class Model:
 		self.isTrain = isTrain
 		self.outputs = []
 
+	def cuda(self):
+		for i in range(len(self.Layers)):
+			self.Layers[i] = self.Layers[i].cuda()
+
+		return self
+
 	def forward(self, input):
 		'''
 			Assuming input is (batch_size,num_classes)

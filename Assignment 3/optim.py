@@ -12,7 +12,7 @@ class MomentumOptimizer:
 		self.v = []
 		for layer in self.model.Layers:
 			if ((type(layer) == Linear.Linear) or (type(layer) == Conv.Conv)):
-				self.v.append({'W' : torch.zeros_like(layer.W), 'B' : torch.zeros_like(layer.B)})
+				self.v.append({'W' : torch.zeros_like(layer.W, device=layer.W.device), 'B' : torch.zeros_like(layer.B, device=layer.B.device)})
 			elif ((type(layer) == ReLU.ReLU) or (type(layer) == Flatten.Flatten)):
 				self.v.append({})
 			else:

@@ -7,6 +7,9 @@ class Flatten:
 	def __init__(self):
 		pass
 
+	def cuda(self):
+		return self
+
 	def forward(self, input):
 		B = input.shape[0]
 		output = input.reshape(B, -1)
