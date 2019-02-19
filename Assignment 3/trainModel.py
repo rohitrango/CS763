@@ -54,6 +54,7 @@ lr = args.lr
 reg = args.reg
 momentum = args.momentum
 print_every = 100
+save_every = 20
 batch_size = args.batch_size
 
 tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
@@ -93,6 +94,7 @@ for epoch in range(epochs):
 		val_acc = utils.getAccuracy(model, val_data, val_labels, batch_size, args.use_gpu)
 		val_accs.append(val_acc)
 		print("Epoch : %d, validation accuracy : %f" % (epoch, val_acc))
+		start_time = time.time()
 	while (not tr_loader.doneEpoch()):
 		batch_xs, batch_ys = tr_loader.nextBatch()
 		batch_xs, batch_ys = torch.Tensor(batch_xs), torch.Tensor(batch_ys)
@@ -110,11 +112,15 @@ for epoch in range(epochs):
 			print("Train loss : %f, Train acc : %f" % (loss[-1], acc[-1]))
 
 		i += 1
+	if (epoch % save_every == 0):
+		torch.save({'model' : model	, 
+					'criterion' : criterion}, os.path.join(args.modelName, 'model_' + str(epoch) + '.pt'))
 
 if (not os.path.exists(args.modelName)):
 	os.makedirs(args.modelName)
-with open(os.path.join(args.modelName, 'model.pt'), 'wb') as f:
-	pickle.dump((model, criterion), f)
+
+torch.save({'model' : model	, 
+			'criterion' : criterion}, os.path.join(args.modelName, 'model_final.pt'))
 
 # CHECK : finally remove the part below this
 with open(os.path.join(args.modelName, 'stats.bin'), 'wb') as f:
