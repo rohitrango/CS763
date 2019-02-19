@@ -16,6 +16,13 @@ class Linear:
 		self.gradW = torch.zeros_like(self.W)
 		self.gradB = torch.zeros_like(self.B)
 
+	def cuda(self):
+		self.W = self.W.cuda()
+		self.B = self.B.cuda()
+		self.gradW = self.gradW.cuda()
+		self.gradB = self.gradB.cuda()
+		return self
+
 	def forward(self, input):
 		'''
 			Assuming input is (batch_size,num_in) as output is required to be (batch_size, num_out)
@@ -40,8 +47,8 @@ class Linear:
 		return gradInput
 
 	def clearGrad(self):
-		self.gradW = torch.zeros_like(self.W)
-		self.gradB = torch.zeros_like(self.B)
+		self.gradW = torch.zeros_like(self.W, device=self.W.device)
+		self.gradB = torch.zeros_like(self.B, device=self.B.device)
 
 	def dispParam(self):
 		'''

@@ -23,6 +23,15 @@ class Conv:
 		self.gradW = torch.zeros_like(self.W)
 		self.gradB = torch.zeros_like(self.B)
 
+	def cuda(self):
+		# Utilize GPU memory (we have GPUs, don't ask)
+		self.W = self.W.cuda()
+		self.B = self.B.cuda()
+		self.gradW = self.gradW.cuda()
+		self.gradB = self.gradB.cuda()
+		return self
+
+
 	def forward(self, input):
 		'''
 			Assuming input is (N, C, H, W) as output is required to be (N, F, H1, W1)
@@ -34,7 +43,7 @@ class Conv:
 
 		## H and W
 		flatW = self.W.reshape(self.W.shape[0], -1)
-		output = torch.zeros((N, self.channels_out, H_out, W_out))
+		output = torch.zeros((N, self.channels_out, H_out, W_out), device=input.device)
 
 		ii_idx = list(range(H_out))
 		jj_idx = list(range(W_out))
@@ -61,7 +70,7 @@ class Conv:
 		H_out = (H - self.h)//self.stride + 1
 		W_out = (W - self.w)//self.stride + 1
 
-		gradInput = torch.zeros_like(input)
+		gradInput = torch.zeros_like(input, device=input.device)
 
 		self.gradB = gradOutput.sum(dim=[0, 2, 3])
 		flatW = self.W.reshape(self.W.shape[0], -1)
@@ -84,15 +93,15 @@ class Conv:
 
 				#### Get gradient for input chunk here
 				#  N * F ------- F * C * k1 * k2
-				dx = torch.mm(gradOutChunk, flatW).reshape(self.channels_out, C, self.h, self.w)
+				dx = torch.mm(gradOutChunk, flatW).reshape(-1, C, self.h, self.w)
 				gradInput[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w] = gradInput[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w] + dx
 
 		return gradInput
 
 
 	def clearGrad(self):
-		self.gradW = torch.zeros_like(self.W)
-		self.gradB = torch.zeros_like(self.B)
+		self.gradW = torch.zeros_like(self.W, device=self.W)
+		self.gradB = torch.zeros_like(self.B, device=self.B)
 
 	def dispParam(self):
 		pass
@@ -101,11 +110,12 @@ class Conv:
 
 if __name__ == '__main__':
 	convOurs = Conv(3, 32, 5, 5, stride=3)
-	convNorm = torch.nn.Conv2d(3, 32, 5, stride=3)
+	convOurs.cuda()
+	convNorm = torch.nn.Conv2d(3, 32, 5, stride=3).cuda()
 	convNorm.weight.data = convOurs.W.data
 	convNorm.bias.data = convOurs.B.data.squeeze()
 
-	inp = torch.rand(32, 3, 28, 28)
+	inp = torch.rand(32, 3, 28, 28).cuda()
 	out1 = convOurs.forward(inp)
 	out2 = convNorm.forward(inp)
 	# Check values in forward prop
@@ -115,9 +125,10 @@ if __name__ == '__main__':
 	s = out2.sum()
 	s.backward()
 
-	gradOutput = torch.ones(out2.shape)
+	gradOutput = torch.ones(out2.shape).cuda()
 	gradInp = convOurs.backward(inp, gradOutput)
 
 	# Backward pass comparison
 	print(torch.max(torch.abs(convOurs.gradW - convNorm.weight.grad)))
 	print(torch.max(torch.abs(convOurs.gradB - convNorm.bias.grad)))
+	raw_input()
