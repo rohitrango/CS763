@@ -59,7 +59,7 @@ if (args.use_dropout):
 else:
 	dropout = (0.0, 0.0)
 
-model = models.BNConvNetworkSmall(input_shape, output_shape)
+model = models.BNConvNetworkSmallNoPool(input_shape, output_shape)
 
 cpu_device = torch.device('cpu')
 if (args.use_gpu):
