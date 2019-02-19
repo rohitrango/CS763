@@ -10,6 +10,7 @@ import numpy as np
 import torchfile, pickle, os, sys
 import utils
 import math
+import matplotlib.pyplot as plt 						# CHECK : finally remove this package
 
 torch.set_default_dtype(torch.double)
 
@@ -17,6 +18,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-modelName', help='name of model; name used to create folder to save model')
 parser.add_argument('-data', help='path to train data')
 parser.add_argument('-target', help='path to target labels')
+parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
+parser.add_argument('--epochs', type=int, default=20, help='number of epochs')
+parser.add_argument('--reg', type=float, default=0.0, help='regularization weight')
+parser.add_argument('--momentum', type=float, default=0.9, help='momentum in momentum optimizer')
+parser.add_argument('--batch_size', type=int, default=128, help='batch size for training, testing')
+parser.add_argument('--fraction_validation', type=float, default=0.05, help='fraction of data to be used for validation')
+
 args = parser.parse_args()
 
 input = torchfile.load(args.data)
@@ -26,7 +34,7 @@ input = input.astype(np.float32)
 min_val, max_val = 0.0, 255.0
 input = (input - min_val) / (max_val - min_val) - 0.5
 
-fraction_validation = 0.05
+fraction_validation = args.fraction_validation
 
 input_size = input.shape[1 : ]
 output_size = (np.max(target) - np.min(target) + 1, )
@@ -38,12 +46,12 @@ data_perm = np.random.permutation(np.arange(input.shape[0]))
 input, target = input[data_perm], target[data_perm]
 tr_data, tr_labels, val_data, val_labels = utils.splitTrainVal(input, target, fraction_validation)
 
-epochs = 20
-lr = 0.01
-reg = 0.0
-momentum = 0.9
+epochs = args.epochs
+lr = args.lr
+reg = args.reg
+momentum = args.momentum
 print_every = 100
-batch_size = 128
+batch_size = args.batch_size
 
 tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
 
@@ -89,3 +97,18 @@ if (not os.path.exists(args.modelName)):
 	os.makedirs(args.modelName)
 with open(os.path.join(args.modelName, 'model.pt'), 'wb') as f:
 	pickle.dump((model, criterion), f)
+
+# CHECK : finally remove the part below this
+with open(os.path.join(args.modelName, 'stats.bin'), 'wb') as f:
+	pickle.dump((val_accs, loss, acc), f)
+
+with open(os.path.join(args.modelName, 'stats.txt'), 'w') as f:
+	f.write('Validation accuracy : %f' % (val_accs[-1]))
+
+plt.plot(val_accs)
+plt.savefig(os.path.join(args.modelName, 'val_acc_graph.pdf'))
+
+plt.plot(loss)
+plt.savefig(os.path.join(args.modelName, 'loss_graph.pdf'))
+plt.plot(acc)
+plt.savefig(os.path.join(args.modelName, 'acc_graph.pdf'))
