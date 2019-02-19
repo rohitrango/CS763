@@ -24,18 +24,41 @@ class DataLoader:
 		self.pos = 0
 		self.done_epoch = False
 		if (shuffle):
-			perm = np.random.permutation(np.arage(self.data.shape[0]))
+			perm = np.random.permutation(np.arange(self.data.shape[0]))
 			self.data, self.labels = self.data[perm], self.labels[perm]
 
-	def nextBatch(self):
+	def nextBatch(self, random_flip=False, random_crop=False):
 		pos, batch_size = self.pos, self.batch_size
 		if (pos + batch_size >= self.data.shape[0]):
 			self.done_epoch = True
 			self.pos = self.data.shape[0]
-			return self.data[pos : ], self.labels[pos : ]
+			batch_xs, batch_ys = self.data[pos : ], self.labels[pos : ]
 		else:
 			self.pos = pos + batch_size
-			return self.data[pos : pos + batch_size], self.labels[pos : pos + batch_size]
+			batch_xs, batch_ys = self.data[pos : pos + batch_size], self.labels[pos : pos + batch_size]
+
+		if (random_flip):
+			# random horizontal flip
+			rnd = np.random.random(size=(batch_xs.shape[0], ))
+			for i in range(batch_xs.shape[0]):
+				if (rnd[i] > 0.5):
+					batch_xs[i] = np.flip(batch_xs[i], axis=1)
+
+		if (random_crop):
+			# random crop after padding
+			rnd = np.random.random(size=(batch_xs.shape[0], ))
+			for i in range(batch_xs.shape[0]):
+				if (rnd[i] > 0.5):
+					batch_xs[i] = self.randomCrop(batch_xs[i], 4) 	# 4 - hard-coded
+
+		return np.expand_dims(batch_xs, axis=1), batch_ys
+
+	# Pads image by given pad and does random crop back to original size - assumed (N, H, W, C) format
+	def randomCrop(self, image, pad):
+		padded_image = np.pad(image, [(pad, pad), (pad, pad)], 'constant')
+		r = np.random.random_integers(0, 2 * pad, size=(2, ))
+		padded_image = padded_image[r[0] : r[0] + image.shape[0], r[1] : r[1] + image.shape[1]]
+		return padded_image
 
 	def doneEpoch(self):
 		return self.done_epoch

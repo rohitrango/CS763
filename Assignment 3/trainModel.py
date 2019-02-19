@@ -19,11 +19,11 @@ parser.add_argument('-modelName', help='name of model; name used to create folde
 parser.add_argument('-data', help='path to train data')
 parser.add_argument('-target', help='path to target labels')
 parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
-parser.add_argument('--epochs', type=int, default=20, help='number of epochs')
+parser.add_argument('--epochs', type=int, default=50, help='number of epochs')
 parser.add_argument('--reg', type=float, default=0.0, help='regularization weight')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum in momentum optimizer')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size for training, testing')
-parser.add_argument('--fraction_validation', type=float, default=0.05, help='fraction of data to be used for validation')
+parser.add_argument('--fraction_validation', type=float, default=0.1, help='fraction of data to be used for validation')
 
 args = parser.parse_args()
 
@@ -107,8 +107,11 @@ with open(os.path.join(args.modelName, 'stats.txt'), 'w') as f:
 
 plt.plot(val_accs)
 plt.savefig(os.path.join(args.modelName, 'val_acc_graph.pdf'))
+plt.clf()
 
 plt.plot(loss)
 plt.savefig(os.path.join(args.modelName, 'loss_graph.pdf'))
+plt.clf()
 plt.plot(acc)
 plt.savefig(os.path.join(args.modelName, 'acc_graph.pdf'))
+plt.clf()
