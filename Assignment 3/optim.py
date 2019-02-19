@@ -1,4 +1,4 @@
-import Linear, ReLU, Conv, Flatten
+import Linear, ReLU, Conv, Flatten, MaxPool
 import torch
 import sys
 
@@ -13,7 +13,7 @@ class MomentumOptimizer:
 		for layer in self.model.Layers:
 			if ((type(layer) == Linear.Linear) or (type(layer) == Conv.Conv)):
 				self.v.append({'W' : torch.zeros_like(layer.W, device=layer.W.device), 'B' : torch.zeros_like(layer.B, device=layer.B.device)})
-			elif ((type(layer) == ReLU.ReLU) or (type(layer) == Flatten.Flatten)):
+			elif ((type(layer) == ReLU.ReLU) or (type(layer) == Flatten.Flatten) or (type(layer) == MaxPool.MaxPool)):
 				self.v.append({})
 			else:
 				raise NotImplementedError

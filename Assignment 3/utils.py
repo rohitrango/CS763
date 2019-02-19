@@ -63,12 +63,14 @@ class DataLoader:
 	def doneEpoch(self):
 		return self.done_epoch
 
-def getAccuracy(model, data, labels, batch_size):
+def getAccuracy(model, data, labels, batch_size, use_gpu):
 	data_loader = DataLoader(data, labels, batch_size)
 	acc = 0.0
 	while (not data_loader.doneEpoch()):
 		batch_xs, batch_ys = data_loader.nextBatch()
 		batch_xs, batch_ys = torch.Tensor(batch_xs), torch.Tensor(batch_ys)
+		if (use_gpu):
+			batch_xs, batch_ys = batch_xs.cuda(), batch_ys.cuda()
 		scores = model.forward(batch_xs)
 		acc += torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item()
 

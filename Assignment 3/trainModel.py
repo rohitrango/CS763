@@ -7,6 +7,7 @@ from optim import MomentumOptimizer
 from ReLU import ReLU
 from Conv import Conv
 from Flatten import Flatten
+from MaxPool import MaxPool
 import torch
 import numpy as np
 import torchfile, pickle, os, sys
@@ -26,6 +27,7 @@ parser.add_argument('--reg', type=float, default=0.0, help='regularization weigh
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum in momentum optimizer')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size for training, testing')
 parser.add_argument('--fraction_validation', type=float, default=0.1, help='fraction of data to be used for validation')
+parser.add_argument('--use_gpu', action='store_true', help='whether to use gpu for training/testing')
 
 args = parser.parse_args()
 
@@ -58,18 +60,24 @@ tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
 
 model = Model()
 
-model.addLayer(Conv(1, 16, 3, 3, stride=2))
-model.addLayer(ReLU())
-model.addLayer(Conv(16, 16, 3, 3, stride=2))
-model.addLayer(ReLU())
-model.addLayer(Conv(16, 16, 3, 3, stride=6))
-model.addLayer(ReLU())
+# model.addLayer(Conv(1, 16, 3, 3))
+# model.addLayer(ReLU())
+# model.addLayer(MaxPool(2))
+# model.addLayer(Conv(16, 16, 3, 3))
+# model.addLayer(ReLU())
+# model.addLayer(MaxPool(2))
+# model.addLayer(Conv(16, 16, 3, 3))
+# model.addLayer(ReLU())
+# model.addLayer(MaxPool(6))
 
 model.addLayer(Flatten())
 
-model.addLayer(Linear(16 * 4 * 4, 32))
+# model.addLayer(Linear(16 * 3 * 3, 32))
+model.addLayer(Linear(108 * 108, 32))
 model.addLayer(ReLU())
 model.addLayer(Linear(32, output_size[0]))
+
+model = model.cuda()
 
 criterion = Criterion()
 
@@ -82,12 +90,14 @@ i = 0
 for epoch in range(epochs):
 	tr_loader.resetPos()
 	if (fraction_validation != 0.0):
-		val_acc = utils.getAccuracy(model, val_data, val_labels, batch_size)
+		val_acc = utils.getAccuracy(model, val_data, val_labels, batch_size, args.use_gpu)
 		val_accs.append(val_acc)
 		print("Epoch : %d, validation accuracy : %f" % (epoch, val_acc))
 	while (not tr_loader.doneEpoch()):
 		batch_xs, batch_ys = tr_loader.nextBatch()
 		batch_xs, batch_ys = torch.Tensor(batch_xs), torch.Tensor(batch_ys)
+		if (args.use_gpu):
+			batch_xs, batch_ys = batch_xs.cuda(), batch_ys.cuda()
 		scores = model.forward(batch_xs)
 		cur_loss = criterion.forward(scores, batch_ys).item()
 		cur_acc = torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item() * 1.0 / batch_xs.shape[0]
