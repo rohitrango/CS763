@@ -29,3 +29,4 @@ trial.backward(input,gradOut)
 trial.dispGradParam()
 trial.clearGradParam()
 trial.dispGradParam()
+
