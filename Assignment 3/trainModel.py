@@ -14,6 +14,7 @@ import torchfile, pickle, os, sys
 import utils
 import math
 import matplotlib.pyplot as plt 						# CHECK : finally remove this package
+import time
 
 torch.set_default_dtype(torch.double)
 
@@ -84,17 +85,26 @@ criterion = Criterion()
 
 optim = MomentumOptimizer(model, lr=lr, reg=reg, momentum=momentum)
 
+if (not os.path.exists(args.modelName)):
+	os.makedirs(args.modelName)
+
 val_accs = []
 loss = []
 acc = []
 i = 0
+start_time = time.time()
 for epoch in range(epochs):
 	tr_loader.resetPos()
 	if (fraction_validation != 0.0):
 		val_acc = utils.getAccuracy(model, val_data, val_labels, batch_size, args.use_gpu)
 		val_accs.append(val_acc)
 		print("Epoch : %d, validation accuracy : %f" % (epoch, val_acc))
-		start_time = time.time()
+		print("Time Elapsed:", time.time() - start_time)
+
+	if (epoch % save_every == 0):
+		torch.save({'model' : model	, 
+					'criterion' : criterion}, os.path.join(args.modelName, 'model_' + str(epoch) + '.pt'))
+
 	while (not tr_loader.doneEpoch()):
 		batch_xs, batch_ys = tr_loader.nextBatch()
 		batch_xs, batch_ys = torch.Tensor(batch_xs), torch.Tensor(batch_ys)
@@ -112,12 +122,6 @@ for epoch in range(epochs):
 			print("Train loss : %f, Train acc : %f" % (loss[-1], acc[-1]))
 
 		i += 1
-	if (epoch % save_every == 0):
-		torch.save({'model' : model	, 
-					'criterion' : criterion}, os.path.join(args.modelName, 'model_' + str(epoch) + '.pt'))
-
-if (not os.path.exists(args.modelName)):
-	os.makedirs(args.modelName)
 
 torch.save({'model' : model	, 
 			'criterion' : criterion}, os.path.join(args.modelName, 'model_final.pt'))
