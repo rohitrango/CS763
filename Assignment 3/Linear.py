@@ -54,16 +54,17 @@ class Linear:
 		'''
 			Display parameters in 2D Matrix format with elements separated by spaces
 		'''
-		weight = self.W
-		bias = self.B
-		print('W')
-		for i in range(weight.size(0)):
-			for j in range(weight[i].size(0)):
-				print(weight[i][j].item(),end=' ')
-			print()
+		# weight = self.W
+		# bias = self.B
+		# print('W')
+		# for i in range(weight.size(0)):
+		# 	for j in range(weight[i].size(0)):
+		# 		print(weight[i][j].item(),end=' ')
+		# 	print()
 
-		print('b')
-		for i in range(bias.size(0)):
-			print(bias[i].item(),end=' ')
-		print()
-		print()
+		# print('b')
+		# for i in range(bias.size(0)):
+		# 	print(bias[i].item(),end=' ')
+		# print()
+		# print()
+		pass

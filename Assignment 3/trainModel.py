@@ -54,7 +54,7 @@ epochs = args.epochs
 lr = args.lr
 reg = args.reg
 momentum = args.momentum
-print_every = 100
+print_every = 50
 save_every = 20
 batch_size = args.batch_size
 
@@ -62,19 +62,19 @@ tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
 
 model = Model()
 
-model.addLayer(Conv(1, 16, 3, 3))
+model.addLayer(Conv(1, 16, 3, 3, stride=2))
 model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
-model.addLayer(Conv(16, 16, 3, 3))
+# model.addLayer(MaxPool(2))
+model.addLayer(Conv(16, 16, 3, 3, stride=2))
 model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
-model.addLayer(Conv(16, 16, 3, 3))
+# model.addLayer(MaxPool(2))
+model.addLayer(Conv(16, 16, 3, 3, stride=6))
 model.addLayer(ReLU())
-model.addLayer(MaxPool(6))
+# model.addLayer(MaxPool(6))
 
 model.addLayer(Flatten())
 
-model.addLayer(Linear(16 * 3 * 3, 32))
+model.addLayer(Linear(16 * 4 * 4, 32))
 # model.addLayer(Linear(108 * 108, 32))
 model.addLayer(ReLU())
 model.addLayer(Linear(32, output_size[0]))

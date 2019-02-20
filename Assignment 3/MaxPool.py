@@ -45,15 +45,20 @@ class MaxPool:
 		H_out = H//self.kernel_size
 		W_out = W//self.kernel_size
 
-		for ii in range(H_out):
-			for jj in range(W_out):
-				inp_ii = self.kernel_size*ii
-				inp_jj = self.kernel_size*jj
-				chunk = input[:, :, inp_ii:inp_ii+self.kernel_size, inp_jj:inp_jj+self.kernel_size]
-				# chunk is of size N * C * K * K
-				maxVal = torch.max(torch.max(chunk, 2)[0], 2)[0][:, :, None, None]
-				gradInput[:, :, inp_ii:inp_ii+self.kernel_size, inp_jj:inp_jj+self.kernel_size] =\
-						 (torch.abs(chunk - maxVal) < 1e-10).double()*gradOutput[:, :, ii:ii+1, jj:jj+1]
+		# Code here
+		unfoldedInp = input.unfold(2, self.h, self.stride).contiguous()
+		unfoldedInp = unfoldedInp.unfold(3, self.w, self.stride).contiguous()
+		# unfolded is of the same shape as (b, c, outH, outW, k1, k2)
+
+		# for ii in range(H_out):
+		# 	for jj in range(W_out):
+		# 		inp_ii = self.kernel_size*ii
+		# 		inp_jj = self.kernel_size*jj
+		# 		chunk = input[:, :, inp_ii:inp_ii+self.kernel_size, inp_jj:inp_jj+self.kernel_size]
+		# 		# chunk is of size N * C * K * K
+		# 		maxVal = torch.max(torch.max(chunk, 2)[0], 2)[0][:, :, None, None]
+		# 		gradInput[:, :, inp_ii:inp_ii+self.kernel_size, inp_jj:inp_jj+self.kernel_size] =\
+		# 				 (torch.abs(chunk - maxVal) < 1e-10).double()*gradOutput[:, :, ii:ii+1, jj:jj+1]
 
 		return gradInput
 
