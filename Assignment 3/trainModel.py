@@ -66,15 +66,6 @@ model = Model()
 
 # check again
 # conv network
-# model.addLayer(Conv(1, 16, 3, 3))
-# model.addLayer(ReLU())
-# model.addLayer(MaxPool(2))
-# model.addLayer(Conv(16, 16, 3, 3))
-# model.addLayer(ReLU())
-# model.addLayer(MaxPool(2))
-# model.addLayer(Conv(16, 16, 3, 3))
-# model.addLayer(ReLU())
-# model.addLayer(MaxPool(6))
 model.addLayer(Conv(1, 16, 3, 3))
 model.addLayer(ReLU())
 model.addLayer(MaxPool(2))
@@ -88,20 +79,20 @@ model.addLayer(Conv(16, 16, 3, 3))
 model.addLayer(ReLU())
 model.addLayer(MaxPool(2))
 
-# model.addLayer(Flatten())
+model.addLayer(Flatten())
 
 model.addLayer(Linear(16 * 4 * 4, 32))
 # model.addLayer(Linear(108 * 108, 32))
-# model.addLayer(ReLU())
-# model.addLayer(Linear(32, output_size[0]))
+model.addLayer(ReLU())
+model.addLayer(Linear(32, output_size[0]))
 
 # linear network
-model.addLayer(Flatten())
-model.addLayer(Linear(108 * 108, 200))
-model.addLayer(ReLU())
-model.addLayer(Linear(200, 100))
-model.addLayer(ReLU())
-model.addLayer(Linear(100, output_size[0]))
+# model.addLayer(Flatten())
+# model.addLayer(Linear(108 * 108, 200))
+# model.addLayer(ReLU())
+# model.addLayer(Linear(200, 100))
+# model.addLayer(ReLU())
+# model.addLayer(Linear(100, output_size[0]))
 
 if (args.use_gpu):
 	model = model.cuda()
