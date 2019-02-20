@@ -28,9 +28,7 @@ min_val, max_val = 0.0, 255.0
 input = (input - min_val) / (max_val - min_val) - 0.5
 
 model = torch.load(os.path.join(args.modelName, 'model.pt'))['model']
-if args.gpu:
-	input = input.cuda()
-pred = utils.getPredictions(model, input, args.batch_size)
+pred = utils.getPredictions(model, input, args.batch_size, args.gpu)
 
 with open(os.path.join(args.modelName, 'test_pred.txt'), 'w') as f:
 	f.write('id,label\n')
