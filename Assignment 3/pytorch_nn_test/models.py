@@ -31,19 +31,19 @@ class BNNetwork(nn.Module):
 		self.layers.append(nn.Linear(input_size, 200))
 		self.layers.append(nn.ReLU())
 		self.layers.append(nn.BatchNorm1d(200))
-		self.layers.append(nn.Linear(200, 200))
+		# self.layers.append(nn.Linear(200, 200))
+		# self.layers.append(nn.ReLU())
+		# self.layers.append(nn.BatchNorm1d(200))
+		# self.layers.append(nn.Linear(200, 200))
+		# self.layers.append(nn.ReLU())
+		# self.layers.append(nn.BatchNorm1d(200))
+		# self.layers.append(nn.Linear(200, 200))
+		# self.layers.append(nn.ReLU())
+		# self.layers.append(nn.BatchNorm1d(200))
+		self.layers.append(nn.Linear(200, 100))
 		self.layers.append(nn.ReLU())
-		self.layers.append(nn.BatchNorm1d(200))
-		self.layers.append(nn.Linear(200, 200))
-		self.layers.append(nn.ReLU())
-		self.layers.append(nn.BatchNorm1d(200))
-		self.layers.append(nn.Linear(200, 200))
-		self.layers.append(nn.ReLU())
-		self.layers.append(nn.BatchNorm1d(200))
-		self.layers.append(nn.Linear(200, 200))
-		self.layers.append(nn.ReLU())
-		self.layers.append(nn.BatchNorm1d(200))
-		self.layers.append(nn.Linear(200, output_shape[0]))
+		self.layers.append(nn.BatchNorm1d(100))
+		self.layers.append(nn.Linear(100, output_shape[0]))
 		self.layers = nn.Sequential(*tuple(self.layers))
 
 	def forward(self, x):
@@ -106,7 +106,9 @@ class BNConvNetworkSmallNoPadding(nn.Module):
 		# self.conv_layers.append(nn.BatchNorm2d(16))
 		self.conv_layers.append(nn.MaxPool2d(kernel_size=6))
 
-		self.linear_layers.append(nn.Linear(16 * 3 * 3, output_shape[0]))
+		self.linear_layers.append(nn.Linear(16 * 3 * 3, 32))
+		self.linear_layers.append(nn.ReLU())
+		self.linear_layers.append(nn.Linear(32, output_shape[0]))
 		
 		self.conv_layers = nn.Sequential(*tuple(self.conv_layers))
 		self.linear_layers = nn.Sequential(*tuple(self.linear_layers))
@@ -118,25 +120,28 @@ class BNConvNetworkSmallNoPadding(nn.Module):
 		y = self.linear_layers(y)
 		return y
 
-class BNConvNetworkSmallNoPool(nn.Module):
+class BNConvNetworkSmall1NoPadding(nn.Module):
 	def __init__(self, input_shape, output_shape):
-		super(BNConvNetworkSmallNoPool, self).__init__()
+		super(BNConvNetworkSmall1NoPadding, self).__init__()
 		input_size = np.prod(input_shape)
 		self.conv_layers = []
 		self.linear_layers = []
-		self.conv_layers.append(nn.Conv2d(in_channels=1, out_channels=16, kernel_size=3, padding=1, stride=2))
-		# self.conv_layers.append(nn.BatchNorm2d(16))
+		self.conv_layers.append(nn.Conv2d(in_channels=1, out_channels=16, kernel_size=6, stride=6))
 		self.conv_layers.append(nn.ReLU())
-
-		self.conv_layers.append(nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, stride=2))
 		# self.conv_layers.append(nn.BatchNorm2d(16))
-		self.conv_layers.append(nn.ReLU())
+		# self.conv_layers.append(nn.MaxPool2d(kernel_size=2))
 
-		self.conv_layers.append(nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, stride=6))
+		self.conv_layers.append(nn.Conv2d(in_channels=16, out_channels=32, kernel_size=6, stride=6))
+		self.conv_layers.append(nn.ReLU())
 		# self.conv_layers.append(nn.BatchNorm2d(16))
-		self.conv_layers.append(nn.ReLU())
+		# self.conv_layers.append(nn.MaxPool2d(kernel_size=2))
 
-		self.linear_layers.append(nn.Linear(16 * 4 * 4, 32))
+		# self.conv_layers.append(nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3))
+		# self.conv_layers.append(nn.ReLU())
+		# self.conv_layers.append(nn.BatchNorm2d(16))
+		# self.conv_layers.append(nn.MaxPool2d(kernel_size=6))
+
+		self.linear_layers.append(nn.Linear(32 * 3 * 3, 32))
 		self.linear_layers.append(nn.ReLU())
 		self.linear_layers.append(nn.Linear(32, output_shape[0]))
 		

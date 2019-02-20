@@ -17,9 +17,11 @@ class Conv:
 		self.stride = stride
 
 		# W and b are of some output sizes
-		self.W = torch.randn(channels_out, channels_in, H, W)
-		self.W = self.W * math.pow(2 / (channels_in*H*W), 0.5) 			# CORR: xavier initialization: not sure if it is useful when using ReLU
-		self.B = torch.zeros(channels_out) + 0.01
+		self.W = torch.rand(channels_out, channels_in, H, W)
+		rand_bound = math.pow(6 / (channels_in*H*W), 0.5)
+		self.W = 2 * rand_bound * self.W - rand_bound 			# CORR: xavier initialization: not sure if it is useful when using ReLU
+		rand_bound = math.pow(1 / (channels_in*H*W), 0.5)
+		self.B = 2 * rand_bound * torch.rand(channels_out) - rand_bound
 		self.gradW = torch.zeros_like(self.W)
 		self.gradB = torch.zeros_like(self.B)
 

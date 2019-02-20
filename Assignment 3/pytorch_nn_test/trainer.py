@@ -61,7 +61,7 @@ if (args.use_dropout):
 else:
 	dropout = (0.0, 0.0)
 
-model = models.BNConvNetworkSmallNoPadding(input_shape, output_shape)
+model = models.BNConvNetworkSmall1NoPadding(input_shape, output_shape)
 
 cpu_device = torch.device('cpu')
 if (args.use_gpu):
@@ -79,6 +79,8 @@ loss = []
 acc = []
 i = 0
 
+if (not os.path.exists(args.modelName)):
+	os.makedirs(args.modelName)
 
 def getAccuracy(model, data, labels, batch_size, fast_device):
 	data_loader = utils.DataLoader(data, labels, batch_size)
@@ -120,9 +122,6 @@ for epoch in range(epochs):
 	if (epoch % save_every == 0):
 		torch.save({'model' : model	, 
 					'criterion' : criterion}, os.path.join(args.modelName, 'model_' + str(epoch) + '.pt'))
-
-if (not os.path.exists(args.modelName)):
-	os.makedirs(args.modelName)
 
 torch.save({'model' : model	, 
 			'criterion' : criterion}, os.path.join(args.modelName, 'model_final.pt'))
