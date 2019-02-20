@@ -46,6 +46,4 @@ with open(os.path.join(args.modelName, 'test_pred.txt'), 'w') as f:
 		f.write(',')
 		f.write('%d\n' % (pred[i], ))
 
-# INCOMPLETE
-# save testPrediction.bin
 torch.save(pred, os.path.join(args.modelName, 'testPrediction.bin'))

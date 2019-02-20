@@ -47,18 +47,30 @@ class Conv:
 		flatW = self.W.reshape(self.W.shape[0], -1)
 		output = torch.zeros((N, self.channels_out, H_out, W_out), device=input.device)
 
-		ii_idx = list(range(H_out))
-		jj_idx = list(range(W_out))
-		for ii in ii_idx:
-			for jj in jj_idx:
-				# chunk = N * C * k1 * k2, W = F * C * k1 * k2
-				inp_ii = ii*self.stride
-				inp_jj = jj*self.stride
-				# Compute conv
-				chunk = input[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w]
-				flatchunk = chunk.reshape(chunk.shape[0], -1)
-				outchunk = torch.mm(flatchunk, flatW.t())
-				output[:, :, ii, jj] = outchunk + self.B[None]
+		# unfold input
+		unfoldedInp = input.unfold(2, self.h, self.stride).contiguous()
+		unfoldedInp = unfoldedInp.unfold(3, self.w, self.stride).contiguous()
+		# unfolded is of the same shape as (b, c, outH, outW, k1, k2)
+		unfoldedInpFlat = unfoldedInp.permute(0, 2, 3, 1, 4, 5).contiguous().flatten(3).reshape(N*H_out*W_out, -1)
+		conv = torch.mm(unfoldedInpFlat, flatW.t())
+		conv = conv.reshape(N, H_out, W_out, self.channels_out)
+		output = conv.permute(0, 3, 1, 2) + self.B[None, :, None, None]
+
+		# Naive looped conv
+		# ii_idx = list(range(H_out))
+		# jj_idx = list(range(W_out))
+		# for ii in ii_idx:
+		# 	for jj in jj_idx:
+		# 		# chunk = N * C * k1 * k2, W = F * C * k1 * k2
+		# 		inp_ii = ii*self.stride
+		# 		inp_jj = jj*self.stride
+		# 		# Compute conv
+		# 		chunk = input[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w]
+		# 		flatchunk = chunk.reshape(chunk.shape[0], -1)
+
+		# 		# print(flatchunk.device, flatW.device)
+		# 		outchunk = torch.mm(flatchunk, flatW.t())
+		# 		output[:, :, ii, jj] = outchunk + self.B[None]
 
 		return output
 
@@ -77,26 +89,59 @@ class Conv:
 		self.gradB = gradOutput.sum(dim=[0, 2, 3])
 		flatW = self.W.reshape(self.W.shape[0], -1)
 		## Find gradients
-		ii_idx = list(range(H_out))
-		jj_idx = list(range(W_out))
-		for ii in ii_idx:
-			for jj in jj_idx:
-				# Take gradients from output pixel and put in into weights and bias
-				inp_ii = ii*self.stride
-				inp_jj = jj*self.stride
 
-				# N * C * k1 * k2
-				chunk = input[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w]
-				# N * F 
-				gradOutChunk = gradOutput[:, :, ii, jj]
-				dW = torch.mm(gradOutChunk.t(), chunk.reshape(chunk.shape[0], -1))
-				dW = dW.reshape(gradOutChunk.shape[1], *chunk.shape[1:])
-				self.gradW = self.gradW + dW
+		unfoldedInp = input.unfold(2, self.h, self.stride).contiguous()
+		unfoldedInp = unfoldedInp.unfold(3, self.w, self.stride).contiguous()
+		# unfolded is of the same shape as (b, c, outH, outW, k1, k2)
+		unfoldedInp = unfoldedInp.permute(0, 2, 3, 1, 4, 5)
+		# dims are (n, outH, outW, c, k1, k2)
+		# gradOutput = (n, f, outH, outW)
+		gradOutFlat = gradOutput.permute(0, 2, 3, 1)	# (n, H, W, F)
+		dW = torch.mm(gradOutFlat.reshape(-1, self.channels_out).t(), unfoldedInp.reshape(N*W_out*H_out, C*self.h*self.w))
+		dW = dW.reshape(self.channels_out, C, self.h, self.w)
+		self.gradW = dW + 0.0
 
-				#### Get gradient for input chunk here
-				#  N * F ------- F * C * k1 * k2
-				dx = torch.mm(gradOutChunk, flatW).reshape(-1, C, self.h, self.w)
-				gradInput[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w] = gradInput[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w] + dx
+		F = self.channels_out
+		# Get input gradients
+		gradOutExtended = gradOutput #[:, :, :, :, None, None].repeat(1, 1, 1, 1, self.h, self.w)
+		# (n, F, Hout, Wout)
+		gradOutExtended = gradOutExtended.permute(0, 2, 3, 1)
+		# (n, Hout, Wout, F)
+		WflatInp = self.W.permute(1, 2, 3, 0) 	# (C, k1, k2, F)
+		gradInpFlat = torch.mm(gradOutExtended.reshape(-1, F), WflatInp.reshape(-1, F).t())
+		gradInpFlat = gradInpFlat.reshape(N, H_out, W_out, C, self.h, self.w)
+		gradInpFlat = gradInpFlat.permute(0, 3, 4, 5, 1, 2)
+		# (N, C, h, w, H, W)
+		gradInput = gradInpFlat.reshape(N, C*self.h*self.w, H_out*W_out)
+		gradInput = torch.nn.functional.fold(gradInput, (H, W), (self.h, self.w), stride=self.stride)
+
+		# unfoldedInpFlat = unfoldedInp.permute(0, 2, 3, 1, 4, 5).contiguous().flatten(3).reshape(N*H_out*W_out, -1)
+		# conv = torch.mm(unfoldedInpFlat, flatW.t())
+		# conv = conv.reshape(N, H_out, W_out, self.channels_out)
+		# output = conv.permute(0, 3, 1, 2) + self.B[None, :, None, None]
+
+
+		## Naive backprop
+		# ii_idx = list(range(H_out))
+		# jj_idx = list(range(W_out))
+		# for ii in ii_idx:
+		# 	for jj in jj_idx:
+		# 		# Take gradients from output pixel and put in into weights and bias
+		# 		inp_ii = ii*self.stride
+		# 		inp_jj = jj*self.stride
+
+		# 		# N * C * k1 * k2
+		# 		chunk = input[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w]
+		# 		# N * F 
+		# 		gradOutChunk = gradOutput[:, :, ii, jj]
+		# 		dW = torch.mm(gradOutChunk.t(), chunk.reshape(chunk.shape[0], -1))
+		# 		dW = dW.reshape(gradOutChunk.shape[1], *chunk.shape[1:])
+		# 		self.gradW = self.gradW + dW
+
+		# 		#### Get gradient for input chunk here
+		# 		#  N * F ------- F * C * k1 * k2
+		# 		dx = torch.mm(gradOutChunk, flatW).reshape(-1, C, self.h, self.w)
+		# 		gradInput[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w] = gradInput[:, :, inp_ii:inp_ii+self.h, inp_jj:inp_jj+self.w] + dx
 
 		return gradInput
 
@@ -111,26 +156,26 @@ class Conv:
 
 
 if __name__ == '__main__':
-	convOurs = Conv(3, 32, 5, 5, stride=3)
+	convOurs = Conv(3, 32, 5, 5, stride=1)
 	convOurs.cuda()
-	convNorm = torch.nn.Conv2d(3, 32, 5, stride=3).cuda()
+	convNorm = torch.nn.Conv2d(3, 32, 5, stride=1).cuda()
 	convNorm.weight.data = convOurs.W.data
 	convNorm.bias.data = convOurs.B.data.squeeze()
 
-	inp = torch.rand(32, 3, 28, 28).cuda()
+	inp = torch.autograd.Variable(torch.rand(32, 3, 28, 28).cuda(), requires_grad=True)
 	out1 = convOurs.forward(inp)
 	out2 = convNorm.forward(inp)
 	# Check values in forward prop
 	print(torch.max(torch.abs(out1 - out2)))
 
 	### Get a loss function
-	s = out2.sum()
+	s = 2*out2.sum()
 	s.backward()
 
-	gradOutput = torch.ones(out2.shape).cuda()
+	gradOutput = 2*torch.ones(out2.shape).cuda()
 	gradInp = convOurs.backward(inp, gradOutput)
 
 	# Backward pass comparison
 	print(torch.max(torch.abs(convOurs.gradW - convNorm.weight.grad)))
 	print(torch.max(torch.abs(convOurs.gradB - convNorm.bias.grad)))
-	raw_input()
+	print(torch.max(torch.abs(inp.grad - gradInp)))
