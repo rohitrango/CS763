@@ -23,15 +23,13 @@ class MaxPool:
 		N, C, H, W = input.shape
 		H_out = H//self.kernel_size
 		W_out = W//self.kernel_size
-		output = torch.zeros(N, C, H_out, W_out, device=input.device)
 
-		for ii in range(H_out):
-			for jj in range(W_out):
-				inp_ii = self.kernel_size*ii
-				inp_jj = self.kernel_size*jj
-				chunk = input[:, :, inp_ii:inp_ii+self.kernel_size, inp_jj:inp_jj+self.kernel_size]
-				output[:, :, ii, jj] = torch.max(torch.max(chunk, 2)[0], 2)[0]
-
+		# Code here
+		unfoldedInp = input.unfold(2, self.kernel_size, self.kernel_size).contiguous()
+		unfoldedInp = unfoldedInp.unfold(3, self.kernel_size, self.kernel_size).contiguous()
+		# unfolded is of the same shape as (b, c, outH, outW, k1, k2)
+		maxVal = torch.max(torch.max(unfoldedInp, 4)[0], 4)[0]
+		output = maxVal
 		return output
 
 
@@ -46,10 +44,22 @@ class MaxPool:
 		W_out = W//self.kernel_size
 
 		# Code here
-		unfoldedInp = input.unfold(2, self.h, self.stride).contiguous()
-		unfoldedInp = unfoldedInp.unfold(3, self.w, self.stride).contiguous()
+		unfoldedInp = input.unfold(2, self.kernel_size, self.kernel_size).contiguous()
+		unfoldedInp = unfoldedInp.unfold(3, self.kernel_size, self.kernel_size).contiguous()
 		# unfolded is of the same shape as (b, c, outH, outW, k1, k2)
+		maxVal = torch.max(torch.max(unfoldedInp, 4)[0], 4)[0]
+		# maxVal is of (b, c, outH, outW)
+		maxValGates = (torch.abs(unfoldedInp - maxVal[:, :, :, :, None, None])<1e-8).double()
+		# maxValGates is of size (b, c, outH, outW, k1, k2) containing only 1 max per num
+		# gradOutput is of size (b, c, outH, outW)
+		maxValGates = maxValGates*gradOutput[:, :, :, :, None, None]
+		# collapse the maxVal gates back
+		gradInput = maxValGates.permute(0, 1, 4, 5, 2, 3).contiguous()
+		# (N, C, h, w, H, W)
+		gradInput = gradInput.reshape(N, C*self.kernel_size*self.kernel_size, H_out*W_out)
+		gradInput = torch.nn.functional.fold(gradInput, (H, W), (self.kernel_size, self.kernel_size), stride=self.kernel_size)
 
+		# Naive maxpool
 		# for ii in range(H_out):
 		# 	for jj in range(W_out):
 		# 		inp_ii = self.kernel_size*ii
@@ -83,7 +93,7 @@ if __name__ == '__main__':
 	loss = 2*out2.sum()
 	loss.backward()
 
-	gradOut = 2*torch.ones(inp.shape, device=inp.device)
+	gradOut = 2*torch.ones((32,3,14,14), device=inp.device)
 	gradIn = mP1.backward(inp, gradOut)
 
 	print(torch.max(torch.abs(out1 - out2)))
