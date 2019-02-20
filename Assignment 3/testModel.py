@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-modelName', help='name of model; name used to create folder to save model')
 parser.add_argument('-data', help='path to train data')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size for training, testing')
+parser.add_argument('--gpu', type=bool, default=False, help='use gpu')
 
 args = parser.parse_args()
 
@@ -27,7 +28,9 @@ min_val, max_val = 0.0, 255.0
 input = (input - min_val) / (max_val - min_val) - 0.5
 
 model = torch.load(os.path.join(args.modelName, 'model.pt'))['model']
-pred = utils.getPredictions(model, input, batch_size)
+if args.gpu:
+	input = input.cuda()
+pred = utils.getPredictions(model, input, args.batch_size)
 
 with open(os.path.join(args.modelName, 'test_pred.txt'), 'w') as f:
 	f.write('id,label\n')
