@@ -5,12 +5,16 @@ from Linear import Linear
 from Criterion import Criterion
 from optim import MomentumOptimizer
 from ReLU import ReLU
+from Conv import Conv
+from Flatten import Flatten
+from MaxPool import MaxPool
 import torch
 import numpy as np
 import torchfile, pickle, os, sys
 import utils
 import math
 import matplotlib.pyplot as plt 						# CHECK : finally remove this package
+import time
 
 torch.set_default_dtype(torch.double)
 
@@ -24,6 +28,9 @@ parser.add_argument('--reg', type=float, default=0.0, help='regularization weigh
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum in momentum optimizer')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size for training, testing')
 parser.add_argument('--fraction_validation', type=float, default=0.1, help='fraction of data to be used for validation')
+parser.add_argument('--use_gpu', action='store_true', help='whether to use gpu for training/testing')
+parser.add_argument('--random_flip', action='store_true', help='whether to use random flip data augmentation')
+parser.add_argument('--random_crop', action='store_true', help='whether to use random crop data augmentation')
 
 args = parser.parse_args()
 
@@ -50,35 +57,84 @@ lr = args.lr
 reg = args.reg
 momentum = args.momentum
 print_every = 100
+save_every = 5
 batch_size = args.batch_size
 
 tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
 
 model = Model()
 
-model.addLayer(Linear(input_size[0], 200))
+# check again
+# conv network
+# model.addLayer(Conv(1, 16, 3, 3))
+# model.addLayer(ReLU())
+# model.addLayer(MaxPool(2))
+# model.addLayer(Conv(16, 16, 3, 3))
+# model.addLayer(ReLU())
+# model.addLayer(MaxPool(2))
+# model.addLayer(Conv(16, 16, 3, 3))
+# model.addLayer(ReLU())
+# model.addLayer(MaxPool(6))
+model.addLayer(Conv(1, 16, 3, 3))
+model.addLayer(ReLU())
+model.addLayer(MaxPool(2))
+model.addLayer(Conv(16, 16, 3, 3))
+model.addLayer(ReLU())
+model.addLayer(MaxPool(2))
+model.addLayer(Conv(16, 16, 3, 3))
+model.addLayer(ReLU())
+model.addLayer(MaxPool(2))
+model.addLayer(Conv(16, 16, 3, 3))
+model.addLayer(ReLU())
+model.addLayer(MaxPool(2))
+
+# model.addLayer(Flatten())
+
+model.addLayer(Linear(16 * 4 * 4, 32))
+# model.addLayer(Linear(108 * 108, 32))
+# model.addLayer(ReLU())
+# model.addLayer(Linear(32, output_size[0]))
+
+# linear network
+model.addLayer(Flatten())
+model.addLayer(Linear(108 * 108, 200))
 model.addLayer(ReLU())
 model.addLayer(Linear(200, 100))
 model.addLayer(ReLU())
 model.addLayer(Linear(100, output_size[0]))
 
+if (args.use_gpu):
+	model = model.cuda()
+
 criterion = Criterion()
 
 optim = MomentumOptimizer(model, lr=lr, reg=reg, momentum=momentum)
+
+if (not os.path.exists(args.modelName)):
+	os.makedirs(args.modelName)
 
 val_accs = []
 loss = []
 acc = []
 i = 0
+start_time = time.time()
 for epoch in range(epochs):
 	tr_loader.resetPos()
 	if (fraction_validation != 0.0):
-		val_acc = utils.getAccuracy(model, val_data, val_labels, batch_size)
+		val_acc = utils.getAccuracy(model, val_data, val_labels, batch_size, args.use_gpu)
 		val_accs.append(val_acc)
 		print("Epoch : %d, validation accuracy : %f" % (epoch, val_acc))
+		print("Time Elapsed:", time.time() - start_time)
+
+	if (epoch % save_every == 0):
+		torch.save({'model' : model	, 
+					'criterion' : criterion}, os.path.join(args.modelName, 'model_' + str(epoch) + '.pt'))
+
 	while (not tr_loader.doneEpoch()):
-		batch_xs, batch_ys = tr_loader.nextBatch()
+		batch_xs, batch_ys = tr_loader.nextBatch(random_flip=args.random_flip, random_crop=args.random_crop)
 		batch_xs, batch_ys = torch.Tensor(batch_xs), torch.Tensor(batch_ys)
+		if (args.use_gpu):
+			batch_xs, batch_ys = batch_xs.cuda(), batch_ys.cuda()
 		scores = model.forward(batch_xs)
 		cur_loss = criterion.forward(scores, batch_ys).item()
 		cur_acc = torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item() * 1.0 / batch_xs.shape[0]
@@ -92,10 +148,8 @@ for epoch in range(epochs):
 
 		i += 1
 
-if (not os.path.exists(args.modelName)):
-	os.makedirs(args.modelName)
-with open(os.path.join(args.modelName, 'model.pt'), 'wb') as f:
-	pickle.dump((model, criterion), f)
+torch.save({'model' : model	, 
+			'criterion' : criterion}, os.path.join(args.modelName, 'model_final.pt'))
 
 # CHECK : finally remove the part below this
 with open(os.path.join(args.modelName, 'stats.bin'), 'wb') as f:

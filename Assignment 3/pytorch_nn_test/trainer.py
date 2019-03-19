@@ -9,6 +9,7 @@ import models
 import utils
 import pickle
 import matplotlib.pyplot as plt
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-modelName', help='name of model; name used to create folder to save model')
@@ -50,6 +51,7 @@ lr = args.lr
 reg = args.reg
 momentum = args.momentum
 print_every = 100
+save_every = 20
 batch_size = args.batch_size
 
 tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
@@ -59,7 +61,7 @@ if (args.use_dropout):
 else:
 	dropout = (0.0, 0.0)
 
-model = models.BNConvNetworkSmall(input_shape, output_shape)
+model = models.BNConvNetworkSmall1NoPadding(input_shape, output_shape)
 
 cpu_device = torch.device('cpu')
 if (args.use_gpu):
@@ -77,6 +79,8 @@ loss = []
 acc = []
 i = 0
 
+if (not os.path.exists(args.modelName)):
+	os.makedirs(args.modelName)
 
 def getAccuracy(model, data, labels, batch_size, fast_device):
 	data_loader = utils.DataLoader(data, labels, batch_size)
@@ -90,6 +94,7 @@ def getAccuracy(model, data, labels, batch_size, fast_device):
 	acc = acc * 1.0 / data.shape[0]
 	return acc
 
+start_time = time.time()
 for epoch in range(epochs):
 	tr_loader.resetPos()
 	if (fraction_validation != 0.0):
@@ -97,6 +102,7 @@ for epoch in range(epochs):
 		val_acc = getAccuracy(model, val_data, val_labels, batch_size, fast_device)
 		val_accs.append(val_acc)
 		print("Epoch : %d, validation accuracy : %f" % (epoch, val_acc))
+		print("Time Elapsed:", time.time() - start_time)
 	while (not tr_loader.doneEpoch()):
 		model = model.train()
 		batch_xs, batch_ys = tr_loader.nextBatch(random_flip=args.random_flip, random_crop=args.random_crop)
@@ -113,10 +119,12 @@ for epoch in range(epochs):
 			print("Train loss : %f, Train acc : %f" % (loss[-1], acc[-1]))
 		i += 1
 
-if (not os.path.exists(args.modelName)):
-	os.makedirs(args.modelName)
-with open(os.path.join(args.modelName, 'model.pt'), 'wb') as f:
-	pickle.dump((model, criterion), f)
+	if (epoch % save_every == 0):
+		torch.save({'model' : model	, 
+					'criterion' : criterion}, os.path.join(args.modelName, 'model_' + str(epoch) + '.pt'))
+
+torch.save({'model' : model	, 
+			'criterion' : criterion}, os.path.join(args.modelName, 'model_final.pt'))
 
 # CHECK : finally remove the part below this
 with open(os.path.join(args.modelName, 'stats.bin'), 'wb') as f:

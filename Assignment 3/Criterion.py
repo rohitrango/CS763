@@ -13,6 +13,9 @@ class Criterion():
 		'''
 		pass
 
+	def cuda(self):
+		return self
+
 	def forward(self, input, target):
 		'''
 			Assuming input is (batch_size,num_classes) and target is 1D - (batch_size)
@@ -33,7 +36,7 @@ class Criterion():
 		'''
 		batch_size = input.size(0)
 		target = target.long()
-		target_batch = torch.zeros_like(input)
+		target_batch = torch.zeros_like(input, device=input.device)
 		target_batch[range(batch_size),target] = 1
 		ex_inp = torch.exp(input - torch.max(input, dim=1, keepdim=True)[0])				# CORR: avoid overflow of exp
 		sum_scores = torch.sum(ex_inp, dim=1, keepdim=True)
