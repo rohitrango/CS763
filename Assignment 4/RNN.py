@@ -63,7 +63,7 @@ class RNN:
 	def forward(self, input):
 
 		"""
-			Assuming input is (batch_size,seq_len,num_input) and output is required to be (batch_size, num_out)
+			Assuming input is (batch_size, seq_len, num_input) and output is required to be (batch_size, num_out)
 			Assuming within a batch we have a fixed length of sequences, i.e. seq_len
 			Hidden state initialised to 0s afresh before each training batch to reduce inter-data dependency
 		"""
@@ -82,23 +82,54 @@ class RNN:
 			self.hid_hid = torch.matmul(prev_hidden, torch.t(self.Whh)) + self.Bhh
 			self.hid_tot = self.hid_inp + self.hid_hid
 
+			# Can use ReLU instead ?
 			self.hidden_state[seq] = torch.tanh(self.hid_tot)
+			# self.hidden_state[seq] = torch.max(0, self.hid_tot)
 
 		self.output = torch.matmul(self.hidden_state[seq_length-1], torch.t(self.Why)) + self.Bhy
 		output = self.output + 0
 		
 		return output
 
-	# def backward(self, input, gradOutput):
-	# 	'''
-	# 		gradInput is (batch_size, num_in) and gradOutput is similar
-	# 		Not taking into account the activation function here, obviously
-	# 		Derivative only of the unactivated output wrt the weights
-	# 		Also, not updating the weights here, just calculating the gradients
-	# 		Finally, the gradients of W,B are being added up for all batch_examples
-	# 	'''
-	# 	batch_size = input.size(0)
-	# 	self.gradW = torch.t(torch.matmul(torch.t(input), gradOutput))
-	# 	self.gradB = torch.t(torch.sum(gradOutput, dim=0).unsqueeze(0))
-	# 	gradInput = torch.matmul(gradOutput, self.W)
-	# 	return gradInput
+	def backward(self, input, gradOutput):
+		
+		"""
+			gradOutput is (batch_size, num_out)
+		"""
+		
+		seq_length  = self.hidden_state.shape[0]
+		inp 		= self.hidden_state[seq_length-1,:,:]
+
+		self.gradWhy = torch.t(torch.matmul(torch.t(inp), gradOutput))
+		self.gradBhy = torch.t(torch.sum(gradOutput, dim=0).unsqueeze(0))
+		gradInput 	 = torch.matmul(gradOutput, self.Why)
+
+		self.gradWxh = torch.zeros_like(self.Wxh)
+		self.gradBxh = torch.zeros_like(self.Bxh)
+
+		self.gradWhh = torch.zeros_like(self.Whh)
+		self.gradBhh = torch.zeros_like(self.Bhh)
+
+		gradOut = gradInput + 0
+
+		for seq in range(seq_length-1,-1,-1):
+
+			## First differentiating wrt the activation function, assuming tanh here
+			inp = self.hidden_state[seq,:,:]
+			grad_tanh = 1 - inp**2
+			gradOut = grad_tanh * gradOut
+
+			inp = torch.zeros(seq_length, batch_size, hidden_state)
+			if seq > 0:
+				inp = self.hidden_state[seq-1,:,:]
+			
+			self.gradWhh += torch.t(torch.matmul(torch.t(inp), gradOut))
+			self.gradBhh += torch.t(torch.sum(gradOut, dim=0).unsqueeze(0))
+
+			inp = input[:,seq,:]
+
+			self.gradWxh += torch.t(torch.matmul(torch.t(inp), gradOut))
+			self.gradBxh += torch.t(torch.sum(gradOut, dim=0).unsqueeze(0))
+
+			gradInput = torch.matmul(gradOutput, self.Whh)
+			gradOut = gradInput + 0
