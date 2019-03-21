@@ -12,3 +12,4 @@ pytorch_nn_test/m1/
 pytorch_nn_test/m2/
 pytorch_nn_test/no_padding/
 pytorch_nn_test/scaledown_w/
+testing/

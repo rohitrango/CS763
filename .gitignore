@@ -3,4 +3,5 @@
 *.pyc
 *.bin
 *.pt
+__pycache__/
 Project/*
