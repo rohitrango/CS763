@@ -80,13 +80,13 @@ class RNN:
 		for seq in range(seq_len):
 			bat_seq_inp  = input[:, seq, :]
 			prev_hidden  = self.hidden_state[:, max(0, seq-1)]
-			self.hid_inp = torch.matmul(bat_seq_inp, torch.t(self.Wxh)) + self.Bxh.t()
-			self.hid_hid = torch.matmul(prev_hidden, torch.t(self.Whh)) + self.Bhh.t()
+			self.hid_inp = torch.matmul(bat_seq_inp, torch.t(self.Wxh)) + torch.t(self.Bxh)
+			self.hid_hid = torch.matmul(prev_hidden, torch.t(self.Whh)) + torch.t(self.Bhh)
 			self.hid_tot = self.hid_inp + self.hid_hid
 
 			# Can use ReLU instead ?
 			self.hidden_state[:, seq, :] = self.activation(self.hid_tot)
-			self.output[:, seq, :] = torch.matmul(self.hidden_state[:, seq], torch.t(self.Why)) + self.Bhy.t()
+			self.output[:, seq, :] = torch.matmul(self.hidden_state[:, seq], torch.t(self.Why)) + torch.t(self.Bhy)
 			# self.hidden_state[seq] = torch.max(0, self.hid_tot)
 
 		output = self.output[:, seq_length-1, :] + 0
