@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import torch.utils.data
 
-def pad_tensor(v, pad, pad_tensor, truncate_end=True):
+def pad_tensor(v, pad, pad_tensor, truncate_end=True, pad_beginning=False):
     """
     inputs:
         v: 2D torch tensor
@@ -18,6 +18,7 @@ def pad_tensor(v, pad, pad_tensor, truncate_end=True):
         truncate_end: used when length of sequence is greater than 'pad'.
             if true, then truncates the last part to reduce length
             else, truncates the first part to reduce length
+        pad_beginning: if True, then pad PAD in the beginning, else pad PAD in the end
     return:
         returns the tensor of dim=0 'pad' obtained by padding/truncating v 
     """
@@ -28,7 +29,11 @@ def pad_tensor(v, pad, pad_tensor, truncate_end=True):
         else:
             return v[-pad :]
     elif (v.size(0) < pad):
-        return torch.cat([v, pad_tensor.repeat(pad - v.size(0), 1)], dim=0)
+        if (pad_beginning):
+            return torch.cat([pad_tensor.repeat(pad - v.size(0), 1), v], dim=0)
+        else:
+            return torch.cat([v, pad_tensor.repeat(pad - v.size(0), 1)], dim=0)
+
     else:
         return v
 
@@ -36,7 +41,7 @@ class PadCollate:
     """
     Class used for to create object to be passed as collate_fn to make sequences of equal length in dataloader in a batch
     """
-    def __init__(self, max_length, pad_tensor=None, truncate_end=True):
+    def __init__(self, max_length, pad_tensor=None, truncate_end=True, pad_beginning=False):
         """
         input:
             max_length: the maximum length of the padded sequence
@@ -44,10 +49,12 @@ class PadCollate:
             truncate_end: used when a sequence of length > 'max_length' is encountered
                 if true, then truncates the last part to reduce length
                 else, truncates the first part to reduce length
+            pad_beginning: if True, then pad PAD in the beginning, else pad PAD in the end
         """
         self.max_length = max_length
         self.pad_tensor = pad_tensor
         self.truncate_end = truncate_end
+        self.pad_beginning = pad_beginning
 
 
     def pad_collate(self, batch):
@@ -66,7 +73,7 @@ class PadCollate:
         if (pad > self.max_length):
             pad = self.max_length
 
-        batch = list(map(lambda x: (pad_tensor(x[0], pad=pad, pad_tensor=self.pad_tensor, truncate_end=self.truncate_end), x[1]), batch))
+        batch = list(map(lambda x: (pad_tensor(x[0], pad=pad, pad_tensor=self.pad_tensor, truncate_end=self.truncate_end, pad_beginning=self.pad_beginning), x[1]), batch))
         batch_xs = torch.stack(list(map(lambda x: x[0], batch)), dim=1)
         batch_ys = torch.LongTensor(list(map(lambda x: x[1], batch)))
         return batch_xs, batch_ys
