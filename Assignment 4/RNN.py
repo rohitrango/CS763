@@ -9,7 +9,6 @@ class RNN:
 		
 		"""
 			num_in = size of the one-hot encoded input "word". One element of such a batch will have many such "words".
-			Xavier initialization of the weights, the gradients are calculated anyway, so initialization doesn't matter
 		"""
 		
 		self.Wxh = torch.randn(num_hidden, num_in)
@@ -80,13 +79,13 @@ class RNN:
 		for seq in range(seq_len):
 			bat_seq_inp  = input[:, seq, :]
 			prev_hidden  = self.hidden_state[:, max(0, seq-1)]
-			self.hid_inp = torch.matmul(bat_seq_inp, torch.t(self.Wxh)) + self.Bxh.t()
-			self.hid_hid = torch.matmul(prev_hidden, torch.t(self.Whh)) + self.Bhh.t()
+			self.hid_inp = torch.matmul(bat_seq_inp, torch.t(self.Wxh)) + torch.t(self.Bxh)
+			self.hid_hid = torch.matmul(prev_hidden, torch.t(self.Whh)) + torch.t(self.Bhh)
 			self.hid_tot = self.hid_inp + self.hid_hid
 
 			# Can use ReLU instead ?
 			self.hidden_state[:, seq, :] = self.activation(self.hid_tot)
-			self.output[:, seq, :] = torch.matmul(self.hidden_state[:, seq], torch.t(self.Why)) + self.Bhy.t()
+			self.output[:, seq, :] = torch.matmul(self.hidden_state[:, seq], torch.t(self.Why)) + torch.t(self.Bhy)
 			# self.hidden_state[seq] = torch.max(0, self.hid_tot)
 
 		output = self.output[:, seq_length-1, :] + 0
@@ -103,7 +102,7 @@ class RNN:
 		"""
 
 		seq_length  = self.hidden_state.shape[1]
-		inp 		= self.hidden_state[:, seq_length-1, :]	# B *
+		inp 		= self.hidden_state[:, seq_length-1, :]
 
 		self.gradWhy = torch.t(torch.matmul(torch.t(inp), gradOutput[:, seq_length-1]))
 		self.gradBhy = torch.t(torch.sum(gradOutput[:, seq_length-1], dim=0).unsqueeze(0))
@@ -125,7 +124,7 @@ class RNN:
 
 			inp = torch.zeros(batch_size, hidden_state)
 			if seq > 0:
-				inp = self.hidden_state[:, seq, :]
+				inp = self.hidden_state[:, seq-1, :]
 			
 			self.gradWhh += torch.t(torch.matmul(torch.t(inp), gradOut))
 			self.gradBhh += torch.t(torch.sum(gradOut, dim=0).unsqueeze(0))
@@ -135,7 +134,7 @@ class RNN:
 			self.gradWxh += torch.t(torch.matmul(torch.t(inp), gradOut))
 			self.gradBxh += torch.t(torch.sum(gradOut, dim=0).unsqueeze(0))
 
-			gradInput = torch.matmul(gradOutput, self.Whh)
+			gradInput = torch.matmul(gradOut, self.Whh)
 			gradOut = gradInput + 0
 
 		return gradInput
