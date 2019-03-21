@@ -11,7 +11,7 @@ dataset['pad_beginning'] = True
 
 network = {}
 network['hidden_size'] = 256
-network['num_layers'] = 3
-network['cell_type'] = 'RNN'
+network['num_layers'] = 2
+network['cell_type'] = 'LSTM'
 
 config = {'dataset': dataset, 'network': network}

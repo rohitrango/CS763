@@ -13,13 +13,22 @@ import torch.utils.data
 import data_loader
 
 class RNNManyToOne(torch.nn.Module):
-	def __init__(self):
+	def __init__(self, cell_type='RNN'):
 		super(RNNManyToOne, self).__init__()
-		self.rnn = torch.nn.RNN(input_size=len(word_to_index), hidden_size=config['network']['hidden_size'], num_layers=config['network']['num_layers'])
+		self.cell_type = cell_type
+		if (cell_type == 'RNN'):
+			self.rnn = torch.nn.RNN(input_size=len(word_to_index), hidden_size=config['network']['hidden_size'], num_layers=config['network']['num_layers'])
+		elif (cell_type == 'LSTM'):
+			self.lstm = torch.nn.LSTM(input_size=len(word_to_index), hidden_size=config['network']['hidden_size'], num_layers=config['network']['num_layers'])
+		else:
+			raise NotImplementedError
 		self.lin = torch.nn.Linear(in_features=config['network']['hidden_size'], out_features=config['dataset']['num_classes'])
 
-	def forward(self, x, h0):
-		output, hn = self.rnn(x, h0)
+	def forward(self, x, init_state):
+		if (self.cell_type == 'RNN'):
+			output, final_state = self.rnn(x, init_state)
+		elif (self.cell_type == 'LSTM'):
+			output, final_state = self.lstm(x, init_state)
 		scores = self.lin(output[-1])
 
 		return scores
@@ -91,7 +100,7 @@ if (X_val is not None):
 	val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, collate_fn=data_loader.PadCollate(config['dataset']['seq_max_len'], pad_tensor, config['dataset']['pad_beginning']))
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.batch_size, collate_fn=data_loader.PadCollate(config['dataset']['seq_max_len'], pad_tensor, config['dataset']['pad_beginning']))
 
-model = RNNManyToOne()
+model = RNNManyToOne(config['network']['cell_type'])
 
 model = model.to(fast_device)
 
@@ -107,6 +116,16 @@ loss = []
 acc = []
 val_acc = []
 
+def get_init_state(network_params, batch_size, fast_device):
+	if (network_params['cell_type'] == 'RNN'):
+		init_state = torch.zeros((network_params['num_layers'], batch_size, network_params['hidden_size']))
+		init_state = init_state.to(fast_device)
+	elif (network_params['cell_type'] == 'LSTM'):
+		init_state = (torch.zeros((network_params['num_layers'], batch_size, network_params['hidden_size'])), 
+					  torch.zeros((network_params['num_layers'], batch_size, network_params['hidden_size'])))
+		init_state = (init_state[0].to(fast_device), init_state[1].to(fast_device))
+	return init_state
+
 def get_accuracy(model, data_loader, fast_device, network_params):
 	acc = 0.0
 	num_data = 0
@@ -114,9 +133,9 @@ def get_accuracy(model, data_loader, fast_device, network_params):
 		for batch in data_loader:
 			batch_xs, batch_ys = batch
 			batch_xs, batch_ys = batch_xs.to(fast_device), batch_ys.to(fast_device)
-			h0 = torch.zeros((network_params['num_layers'], batch_xs.size(1), network_params['hidden_size']))
-			h0 = h0.to(fast_device)
-			scores = model(batch_xs, h0)
+			
+			init_state = get_init_state(config['network'], batch_xs.size(1), fast_device)
+			scores = model(batch_xs, init_state)
 
 			acc += torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item() * 1.0
 			num_data += batch_xs.size(1)
@@ -130,17 +149,22 @@ for epoch in range(args.epochs):
 	val_acc.append(get_accuracy(model, val_loader, fast_device, config['network']))
 	print('Validation Accuracy: %f' % (val_acc[-1], ))
 
+	epoch_loss, epoch_acc = 0.0, 0.0
+	num_train = 0
 	for batch in train_loader:
 		batch_xs, batch_ys = batch
 		batch_xs, batch_ys = batch_xs.to(fast_device), batch_ys.to(fast_device)
 		optim.zero_grad()
-		h0 = torch.zeros((config['network']['num_layers'], batch_xs.size(1), config['network']['hidden_size']))
-		h0 = h0.to(fast_device)
-		scores = model(batch_xs, h0)
+		init_state = get_init_state(config['network'], batch_xs.size(1), fast_device)
+		scores = model(batch_xs, init_state)
 		
 		cur_loss = criterion(scores, batch_ys)
 		cur_acc = torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item() * 1.0 / batch_xs.size(1)
-		loss.append(cur_loss)
+		epoch_loss += cur_loss.item() * batch_xs.size(1)
+		epoch_acc += cur_acc * batch_xs.size(1)
+		num_train += batch_xs.size(1)
+
+		loss.append(cur_loss.item())
 		acc.append(cur_acc) 
 		
 		cur_loss.backward()
@@ -150,4 +174,9 @@ for epoch in range(args.epochs):
 			print("iter: %d, Train loss : %f, Train acc : %f" % (i ,loss[-1], acc[-1]))
 
 		i += 1
+
+	epoch_loss /= num_train
+	epoch_acc /= num_train
+
+	print('Epoch train loss: %f, epoch train acc: %f' % (epoch_loss, epoch_acc))
 
