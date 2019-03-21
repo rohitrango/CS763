@@ -2,10 +2,9 @@ import torch
 
 torch.set_default_dtype(torch.double)
 
-# Can't use nn package, so how do we create a torch class ? For now, a normal python class.
 class Criterion():
 	'''
-		Implements the Cross Entropy Loss only as of now
+		Implements the Cross Entropy Loss
 	'''
 	def __init__(self):
 		'''
@@ -25,8 +24,8 @@ class Criterion():
 		batch_size = input.size(0)
 		target = target.long()
 		neg_scores = -(input[range(batch_size),target] - torch.max(input, dim=1)[0])
-		log_sum_scores = torch.log(torch.sum(torch.exp(input - torch.max(input, dim=1, keepdim=True)[0]), dim=1)) 		# CORR: avoid overflow of exp
-		losses = neg_scores + log_sum_scores											# CORR: avoid overflow of exp
+		log_sum_scores = torch.log(torch.sum(torch.exp(input - torch.max(input, dim=1, keepdim=True)[0]), dim=1))
+		losses = neg_scores + log_sum_scores
 		loss = torch.mean(losses)
 		return loss
 
@@ -38,8 +37,8 @@ class Criterion():
 		target = target.long()
 		target_batch = torch.zeros_like(input, device=input.device)
 		target_batch[range(batch_size),target] = 1
-		ex_inp = torch.exp(input - torch.max(input, dim=1, keepdim=True)[0])				# CORR: avoid overflow of exp
+		ex_inp = torch.exp(input - torch.max(input, dim=1, keepdim=True)[0])
 		sum_scores = torch.sum(ex_inp, dim=1, keepdim=True)
-		probs = torch.exp(input - torch.max(input, dim=1, keepdim=True)[0]) / sum_scores 	# CORR: avoid overflow of exp
+		probs = torch.exp(input - torch.max(input, dim=1, keepdim=True)[0]) / sum_scores
 		gradient = (probs - target_batch) / batch_size
 		return gradient

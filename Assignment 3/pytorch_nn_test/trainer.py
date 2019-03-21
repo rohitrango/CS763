@@ -1,22 +1,15 @@
-import argparse
 import sys
-from Model import Model
-from Linear import Linear
-from Criterion import Criterion
-from optim import MomentumOptimizer
-from ReLU import ReLU
-from Conv import Conv
-from Flatten import Flatten
-from MaxPool import MaxPool
-import torch
-import numpy as np
-import torchfile, pickle, os, sys
-import utils
-import math
-import matplotlib.pyplot as plt 						# CHECK : finally remove this package
-import time
+sys.path.append('../')
 
-torch.set_default_dtype(torch.double)
+import torch
+import torch.nn as nn
+import numpy as np
+import argparse, os, torchfile
+import models
+import utils
+import pickle
+import matplotlib.pyplot as plt
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-modelName', help='name of model; name used to create folder to save model')
@@ -24,13 +17,17 @@ parser.add_argument('-data', help='path to train data')
 parser.add_argument('-target', help='path to target labels')
 parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
 parser.add_argument('--epochs', type=int, default=50, help='number of epochs')
+##################### TODO: temp experimentation ########################
+parser.add_argument('--norm_weights_epochs', type=int, default=30, help='epoch at which to normalize the final layer weights')
+##################### TODO: temp experimentation ########################
 parser.add_argument('--reg', type=float, default=0.0, help='regularization weight')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum in momentum optimizer')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size for training, testing')
 parser.add_argument('--fraction_validation', type=float, default=0.1, help='fraction of data to be used for validation')
-parser.add_argument('--use_gpu', action='store_true', help='whether to use gpu for training/testing')
+parser.add_argument('--use_dropout', action='store_true', help='whether to use dropout')
 parser.add_argument('--random_flip', action='store_true', help='whether to use random flip data augmentation')
 parser.add_argument('--random_crop', action='store_true', help='whether to use random crop data augmentation')
+parser.add_argument('--use_gpu', action='store_true', help='whether to use gpu for training/testing')
 
 args = parser.parse_args()
 
@@ -42,8 +39,8 @@ input = (input - min_val) / (max_val - min_val) - 0.5
 
 fraction_validation = args.fraction_validation
 
-input_size = input.shape[1 : ]
-output_size = (np.max(target) - np.min(target) + 1, )
+input_shape = input.shape[1 : ]
+output_shape = (np.max(target) - np.min(target) + 1, )
 
 np.random.seed(0)
 torch.manual_seed(0)
@@ -57,87 +54,88 @@ lr = args.lr
 reg = args.reg
 momentum = args.momentum
 print_every = 100
-save_every = 5
+save_every = 20
 batch_size = args.batch_size
 
 tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
 
-model = Model()
+if (args.use_dropout):
+	dropout = (0.2, 0.5)
+else:
+	dropout = (0.0, 0.0)
 
-# check again
-# conv network
-model.addLayer(Conv(1, 16, 3, 3))
-model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
-model.addLayer(Conv(16, 16, 3, 3))
-model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
-model.addLayer(Conv(16, 16, 3, 3))
-model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
-model.addLayer(Conv(16, 16, 3, 3))
-model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
+model = models.BNConvNetwork(input_shape, output_shape)
 
-model.addLayer(Flatten())
-
-model.addLayer(Linear(16 * 4 * 4, 32))
-# model.addLayer(Linear(108 * 108, 32))
-model.addLayer(ReLU())
-model.addLayer(Linear(32, output_size[0]))
-
-# linear network
-# model.addLayer(Flatten())
-# model.addLayer(Linear(108 * 108, 200))
-# model.addLayer(ReLU())
-# model.addLayer(Linear(200, 100))
-# model.addLayer(ReLU())
-# model.addLayer(Linear(100, output_size[0]))
-
+cpu_device = torch.device('cpu')
 if (args.use_gpu):
-	model = model.cuda()
+	fast_device = torch.device('cuda:0')
+else:
+	fast_device = cpu_device
 
-criterion = Criterion()
+model = model.to(fast_device)
 
-optim = MomentumOptimizer(model, lr=lr, reg=reg, momentum=momentum)
-
-if (not os.path.exists(args.modelName)):
-	os.makedirs(args.modelName)
-
+criterion = nn.CrossEntropyLoss()
+optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=reg)
+lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda epoch : 0.1 ** (epoch // 60))
 val_accs = []
 loss = []
 acc = []
 i = 0
+
+if (not os.path.exists(args.modelName)):
+	os.makedirs(args.modelName)
+
+def getAccuracy(model, data, labels, batch_size, fast_device):
+	data_loader = utils.DataLoader(data, labels, batch_size)
+	acc = 0.0
+	while (not data_loader.doneEpoch()):
+		batch_xs, batch_ys = data_loader.nextBatch()
+		batch_xs, batch_ys = torch.Tensor(batch_xs).to(fast_device), torch.Tensor(batch_ys).to(fast_device).long()
+		scores = model(batch_xs)
+		acc += torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item()
+
+	acc = acc * 1.0 / data.shape[0]
+	return acc
+
 start_time = time.time()
 for epoch in range(epochs):
+	##################### TODO: temp experimentation ########################
+	if (epoch == args.norm_weights_epochs):
+		pen_params = list(model.linear_layers[-1].parameters())
+		# find average norm
+		pen_weights = pen_params[0].detach().cpu().numpy()
+		avg_norm = np.mean(np.power(np.sum(pen_weights ** 2, axis=1), 0.5))
+		with torch.no_grad():
+			pen_params[0].copy_(pen_params[0] / avg_norm)
+			pen_params[1].copy_(pen_params[1] / avg_norm)
+	##################### TODO: temp experimentation ########################
+
 	tr_loader.resetPos()
 	if (fraction_validation != 0.0):
-		val_acc = utils.getAccuracy(model, val_data, val_labels, batch_size, args.use_gpu)
+		model = model.eval()
+		val_acc = getAccuracy(model, val_data, val_labels, batch_size, fast_device)
 		val_accs.append(val_acc)
 		print("Epoch : %d, validation accuracy : %f" % (epoch, val_acc))
 		print("Time Elapsed:", time.time() - start_time)
+	while (not tr_loader.doneEpoch()):
+		model = model.train()
+		batch_xs, batch_ys = tr_loader.nextBatch(random_flip=args.random_flip, random_crop=args.random_crop)
+		batch_xs, batch_ys = torch.Tensor(batch_xs).to(fast_device), torch.Tensor(batch_ys).to(fast_device).long()
+		optim.zero_grad()
+		scores = model(batch_xs)
+		cur_loss = criterion(scores, batch_ys)
+		cur_acc = torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item() * 1.0 / batch_xs.shape[0]
+		loss.append(cur_loss)
+		acc.append(cur_acc) 
+		cur_loss.backward()
+		optim.step()
+		if (i % print_every == 0):
+			print("Train loss : %f, Train acc : %f" % (loss[-1], acc[-1]))
+		i += 1
 
 	if (epoch % save_every == 0):
 		torch.save({'model' : model	, 
 					'criterion' : criterion}, os.path.join(args.modelName, 'model_' + str(epoch) + '.pt'))
-
-	while (not tr_loader.doneEpoch()):
-		batch_xs, batch_ys = tr_loader.nextBatch(random_flip=args.random_flip, random_crop=args.random_crop)
-		batch_xs, batch_ys = torch.Tensor(batch_xs), torch.Tensor(batch_ys)
-		if (args.use_gpu):
-			batch_xs, batch_ys = batch_xs.cuda(), batch_ys.cuda()
-		scores = model.forward(batch_xs)
-		cur_loss = criterion.forward(scores, batch_ys).item()
-		cur_acc = torch.sum(torch.argmax(scores, dim=1).long() == batch_ys.long()).item() * 1.0 / batch_xs.shape[0]
-		loss.append(cur_loss)
-		acc.append(cur_acc) 
-		d_scores = criterion.backward(scores, batch_ys)
-		model.backward(batch_xs, d_scores)
-		optim.step()
-		if (i % print_every == 0):
-			print("Train loss : %f, Train acc : %f" % (loss[-1], acc[-1]))
-
-		i += 1
 
 torch.save({'model' : model	, 
 			'criterion' : criterion}, os.path.join(args.modelName, 'model_final.pt'))

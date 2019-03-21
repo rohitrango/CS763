@@ -64,25 +64,15 @@ tr_loader = utils.DataLoader(tr_data, tr_labels, batch_size)
 
 model = Model()
 
-# check again
 # conv network
-model.addLayer(Conv(1, 16, 3, 3))
+model.addLayer(Conv(1, 16, 6, 6, stride=6))
 model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
-model.addLayer(Conv(16, 16, 3, 3))
+model.addLayer(Conv(16, 32, 6, 6, stride=6))
 model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
-model.addLayer(Conv(16, 16, 3, 3))
-model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
-model.addLayer(Conv(16, 16, 3, 3))
-model.addLayer(ReLU())
-model.addLayer(MaxPool(2))
 
 model.addLayer(Flatten())
 
-model.addLayer(Linear(16 * 4 * 4, 32))
-# model.addLayer(Linear(108 * 108, 32))
+model.addLayer(Linear(32 * 3 * 3, 32))
 model.addLayer(ReLU())
 model.addLayer(Linear(32, output_size[0]))
 

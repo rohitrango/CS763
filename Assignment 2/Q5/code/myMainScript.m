@@ -45,7 +45,7 @@ noFlashImg = noFlashImg + uint8(randi(MAX, size(noFlashImg)) - 1);
 
 % For the last part
 bNegAdv = imread('../input/negative_barbara.png');
-bNegAdv = imrotate(bNegAdv, 100, 'crop');
+bNegAdv = imrotate(bNegAdv, 90, 'crop');
 bNegAdv = imtranslate(bNegAdv, [-5, 0]);
 bNegAdv = bNegAdv + uint8(randi(MAX, size(bNegAdv)) - 1);
 
