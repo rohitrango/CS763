@@ -1,6 +1,7 @@
 *.tar.gz
 *.zip
-Project/*
+*.pyc
 *.bin
 *.pt
 __pycache__/
+Project/*
