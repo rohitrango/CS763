@@ -1,3 +1,15 @@
 *.pt
 *.pyc*
+bestModel/
+bestconv/
+conv_aug/
+linear/
+m_lr*/
+no_pool/
+pytorch_nn_test/bnconv1nopadding/
+pytorch_nn_test/linear/
+pytorch_nn_test/m1/
+pytorch_nn_test/m2/
+pytorch_nn_test/no_padding/
+pytorch_nn_test/scaledown_w/
 testing/
