@@ -100,15 +100,15 @@ class RNN:
 
         """
             input is (batch_size, seq_len, num_in)
-            gradOutput is (batch_size, seq_len, num_out) as per previous assignment, 
+            gradOutput is (batch_size, num_out) as per previous assignment, 
             we divide by batch_size here and then sum when it comes to individual layers
         """
 
         seq_length  = self.hidden_state.shape[1]
         inp         = self.hidden_state[:, seq_length-1, :]
 
-        self.gradWhy = torch.t(torch.matmul(torch.t(inp), gradOutput[:, seq_length-1]))
-        self.gradBhy = torch.t(torch.sum(gradOutput[:, seq_length-1], dim=0).unsqueeze(0))
+        self.gradWhy = torch.t(torch.matmul(torch.t(inp), gradOutput))
+        self.gradBhy = torch.t(torch.sum(gradOutput, dim=0).unsqueeze(0))
         gradInput    = torch.matmul(gradOutput, self.Why)
 
         self.gradWxh = torch.zeros_like(self.Wxh)

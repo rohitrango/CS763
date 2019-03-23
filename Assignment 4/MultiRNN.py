@@ -102,7 +102,7 @@ class MultiRNN:
 
         seq_length  = self.hidden_state.shape[1]
         gradInput   = torch.zeros_like(input)
-        gradOut     = torch.zeros_like(gradOutput[:, seq, :]) 
+        gradOut     = torch.zeros_like(gradOutput[:, seq_length-1, :]) 
 
         for seq in range(seq_length-1,-1,-1):
             
