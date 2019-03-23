@@ -2,7 +2,7 @@ import torch
 
 torch.set_default_dtype(torch.double)
 
-class Criterion():
+class CrossEntropyLoss():
 	'''
 		Implements the Cross Entropy Loss
 	'''

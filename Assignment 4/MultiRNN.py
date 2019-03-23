@@ -10,7 +10,7 @@ class MultiRNN:
         The last RNN should have only one output, that is only the final hidden state, after which we would apply a Linear Layer.
     """
 
-    def __init__(self, num_in, num_hidden, num_out, activation=torch.tanh):
+    def __init__(self, num_in, num_hidden, activation=torch.tanh):
         
         """
             num_in = size of the one-hot encoded input "word". One element of such a batch will have many such "words".
@@ -57,7 +57,7 @@ class MultiRNN:
 
         """
             Assuming input is (batch_size, seq_len, num_input) and 
-            output is required to be (batch_size, seq_len, num_out)
+            output is required to be (batch_size, seq_len, num_hidden)
             assuming within a batch we have fixed length sequences
 
             We are assuming that the hidden state of every layer 
@@ -88,7 +88,7 @@ class MultiRNN:
 
         """
             input is (batch_size, seq_len, num_in)
-            gradOutput is (batch_size, seq_len, num_out) as per previous assignment, 
+            gradOutput is (batch_size, seq_len, num_hidden) as per previous assignment, 
             we divide by batch_size here and then sum when it comes to individual layers
         """
 
@@ -129,3 +129,13 @@ class MultiRNN:
             gradOut              = torch.matmul(gradOut, self.Whh)
 
         return gradInput
+
+    def zero_grad(self):
+        """
+        Initializes gradient buffer to zero
+        """
+        self.gradWxh = torch.zeros_like(self.Wxh)
+        self.gradBxh = torch.zeros_like(self.Bxh)
+
+        self.gradWhh = torch.zeros_like(self.Whh)
+        self.gradBhh = torch.zeros_like(self.Bhh)

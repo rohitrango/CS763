@@ -1,5 +1,8 @@
 import torch
 
+from MultiRNN import MultiRNN
+from RNN import RNN
+
 torch.set_default_dtype(torch.double)
 
 class Model:
@@ -54,3 +57,34 @@ class Model:
 
 	def addLayer(self, layer):
 		self.Layers.append(layer)
+
+	def zero_grad(self):
+		"""
+		Initializes the gradient buffer of each layer to zero 
+		"""
+		for i in range(len(self.Layers)):
+			self.Layers[i].zero_grad()
+
+def create_model(network_params, num_in, num_out):
+	"""
+	Creates model with given network configuration
+	Args:
+		network_params dictionary
+	Returns:
+		model object
+	"""
+	model = Model()
+	for i in range(network_params['num_layers'] - 1):
+		if (i == 0):
+			cur_layer = MultiRNN(num_in=num_in, num_hidden=network_params['hidden_size'])
+		else:
+			cur_layer = MultiRNN(num_in=network_params['hidden_size'], num_hidden=network_params['hidden_size'])
+		model.addLayer(cur_layer)
+
+	if (network_params['num_layers'] == 1):
+		final_layer = RNN(num_in=num_in, num_hidden=network_params['hidden_size'], num_out=num_out)
+	else:
+		final_layer = RNN(num_in=network_params['hidden_size'], num_hidden=network_params['hidden_size'], num_out=num_out)
+	model.addLayer(final_layer)
+
+	return model

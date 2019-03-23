@@ -144,3 +144,16 @@ class RNN:
             gradOut              = torch.matmul(gradOut, self.Whh)
 
         return gradInput
+
+    def zero_grad(self):
+        """
+        Initializes gradient buffer to zero
+        """
+        self.gradWxh = torch.zeros_like(self.Wxh)
+        self.gradBxh = torch.zeros_like(self.Bxh)
+
+        self.gradWhh = torch.zeros_like(self.Whh)
+        self.gradBhh = torch.zeros_like(self.Bhh)
+
+        self.gradWhy = torch.zeros_like(self.Why)
+        self.gradBhy = torch.zeros_like(self.Bhy)
