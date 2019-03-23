@@ -92,7 +92,7 @@ class RNN:
 
         self.output = torch.matmul(self.hidden_state[:, seq_length - 1, :], torch.t(self.Why)) + torch.t(self.Bhy)
 
-        output = self.output[:, seq_length-1, :] + 0
+        output = self.output + 0
         return output
 
 
@@ -118,6 +118,8 @@ class RNN:
         self.gradBhh = torch.zeros_like(self.Bhh)
 
         gradOut = gradInput + 0
+
+        gradInput = torch.zeros_like(input)
 
         for seq in range(seq_length-1,-1,-1):
 
