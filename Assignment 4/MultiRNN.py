@@ -70,7 +70,7 @@ class MultiRNN:
 
         self.hidden_state = torch.zeros(batch_size, seq_length, hid_length).to(self.Wxh.device)
 
-        for seq in range(seq_len):
+        for seq in range(seq_length):
 
             bat_seq_inp  = input[:, seq, :]
             prev_hidden  = self.hidden_state[:, max(0, seq-1), :]
