@@ -26,6 +26,10 @@ class RNN:
         self.Why = self.Why * math.pow(2 / (num_hidden + num_out), 0.5)
         self.Bhy = torch.zeros(num_out, 1)
 
+        self.parameters = {'Wxh': self.Wxh, 'Bxh': self.Bxh, 
+                            'Whh': self.Whh, 'Bhh': self.Bhh, 
+                            'Why': self.Why, 'Bhy': self.Bhy}
+
         self.activation = activation
 
         self.gradWxh = torch.zeros_like(self.Wxh)
@@ -36,6 +40,10 @@ class RNN:
 
         self.gradWhy = torch.zeros_like(self.Why)
         self.gradBhy = torch.zeros_like(self.Bhy)
+
+        self.gradients = {'Wxh': self.gradWxh, 'Bxh': self.gradBxh, 
+                            'Whh': self.gradWhh, 'Bhh': self.gradBhh, 
+                            'Why': self.gradWhy, 'Bhy': self.gradBhy}
 
     def cuda(self):
         
@@ -128,7 +136,7 @@ class RNN:
             grad_tanh = 1 - inp**2
             gradOut = grad_tanh * gradOut
 
-            prev_hidden = torch.zeros(batch_size, hidden_state)
+            prev_hidden = torch.zeros(self.hidden_state.size(0), self.hidden_state.size(2))
             if seq > 0:
                 prev_hidden = self.hidden_state[:, seq-1, :]
             
@@ -142,6 +150,18 @@ class RNN:
 
             gradInput[:, seq, :] = torch.matmul(gradOut, self.Wxh)
             gradOut              = torch.matmul(gradOut, self.Whh)
+
+        self.gradients['Wxh'] = self.gradWxh
+        self.gradients['Bxh'] = self.gradBxh
+        self.gradients['Whh'] = self.gradWhh
+        self.gradients['Bhh'] = self.gradBhh
+        self.gradients['Why'] = self.gradWhy
+        self.gradients['Bhy'] = self.gradBhy
+
+        # for k, v in self.gradients.items():
+            # if (torch.sum(v) != 0):
+                # print('non zero gradient found', end=' ')
+                # print(k)
 
         return gradInput
 

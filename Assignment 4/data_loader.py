@@ -120,32 +120,33 @@ class ListDataset:
             (x, y)
             where x is one-hot encoded tensor of size (seq_len, encoding_size), y is target label
         """
-        x = torch.stack([one_hot_tensor(self.word_to_index[x], len(self.word_to_index)) for x in self.X[index]], dim=0)
+        x = torch.stack([one_hot_tensor(self.word_to_index.get(x, self.word_to_index['OOV']), len(self.word_to_index)) for x in self.X[index]], dim=0)
         return x, self.y[index]
 
     def __len__(self):
         return len(self.X)
 
 
-def load_train_data(data_path):
+def load_train_data(data_path, labels_path):
     """
     loads train data from the path given
     input:
-        path: path to the folder containing two files, train_data.txt and train_labels.txt
+        data_path: path to train_data.txt
+        labels_path: path to train_labels.txt
     output:
         (X, y)
         where X is list of sentences, where a sentence is a list of words
         y is list of labels
     """
     X, y = [], []
-    with open(os.path.join(data_path, 'train_data.txt'), 'r') as f:
+    with open(data_path, 'r') as f:
         while (True):
             line = f.readline()
             if (line == ''):
                 break
             X.append([int(v) for v in line.split()])
 
-    with open(os.path.join(data_path, 'train_labels.txt'), 'r') as f:
+    with open(labels_path, 'r') as f:
         while (True):
             line = f.readline()
             if (line == ''):
@@ -164,7 +165,7 @@ def load_test_data(data_path):
         where X is list of sentences, where a sentence is a list of words
     """
     X = []
-    with open(os.path.join(data_path, 'train_data.txt'), 'r') as f:
+    with open(data_path, 'r') as f:
         while (True):
             line = f.readline()
             if (line == ''):
@@ -195,9 +196,9 @@ def get_word_to_index_dict(X):
 
     return word_to_index
 
-def load_train_val_dataset(data_path, fraction_validation):
+def load_train_val_dataset(data_path, labels_path, fraction_validation):
     # load and shuffle train dataset
-    X_train, y_train = load_train_data(data_path)
+    X_train, y_train = load_train_data(data_path, labels_path)
     word_to_index = get_word_to_index_dict(X_train)
     train_data = list(zip(X_train, y_train))
     random.shuffle(train_data)
@@ -211,9 +212,10 @@ def load_train_val_dataset(data_path, fraction_validation):
         X_val, y_val = X_train[0 : num_validation], y_train[0 : num_validation]
 
     X_train, y_train = X_train[num_validation : ], y_train[num_validation : ]
-    train_data = list(zip(X_train, y_train))
-    train_data = sorted(train_data, key=lambda x: len(x[0]))
-    X_train, y_train = zip(*train_data)
+    
+    # train_data = list(zip(X_train, y_train))
+    # train_data = sorted(train_data, key=lambda x: len(x[0]))
+    # X_train, y_train = zip(*train_data)
 
     return (X_train, y_train), (X_val, y_val), word_to_index
 
@@ -246,14 +248,14 @@ class DataLoader:
 
 
 if __name__ == '__main__':
-    
-    X, y = load_train_data(sys.argv[1])
-    X_test = load_test_data(sys.argv[2])
-    word_to_index = get_word_to_index_dict(X)
-    word_to_index_test = get_word_to_index_dict(X_test)
+    pass
+    # X, y = load_train_data(sys.argv[1])
+    # X_test = load_test_data(sys.argv[2])
+    # word_to_index = get_word_to_index_dict(X)
+    # word_to_index_test = get_word_to_index_dict(X_test)
     # X = one_hot(X)
 
-    data_loader = ListDataset(X, y, word_to_index)
+    # data_loader = ListDataset(X, y, word_to_index)
 
 
     # X = [[1, 2], [1, 2, 3], [1, 2, 3, 4], [1, 2]]
