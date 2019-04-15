@@ -1,7 +1,8 @@
-function [im_patches ] = selectGoodFeatures(firstFrame, patchsize, topK)
-    [H, W, ~] = size(firstFrame);
-    grayFirstFrame = rgb2gray(firstFrame);
-    features = detectHarrisFeatures(grayFirstFrame);
+function [im_patches, x_good, y_good ] = selectGoodFeatures(grayFrame, patchsize, topK)
+    % Get good patches, and their coordinates given the frame, patch size,
+    % and top K patches to pick from
+    [H, W, ~] = size(grayFrame);
+    features = detectHarrisFeatures(grayFrame);
     points = features.Location;
     x = points(:, 1);
     y = points(:, 2);
@@ -12,15 +13,13 @@ function [im_patches ] = selectGoodFeatures(firstFrame, patchsize, topK)
     y = y(filter_edges);
 
     % Display first frame and overlay the features
-    imagesc(firstFrame);
-    hold on;
-    scatter(x, y);
-    hold off;
+    %colormap gray;
+    %imagesc(grayFrame);
+    %hold on;
+    %scatter(x, y);
+    %hold off;
 
-    % Get structure tensors
-    sobel_mask = fspecial('sobel');
-    Ix = imfilter(grayFirstFrame, sobel_mask');
-    Iy = imfilter(grayFirstFrame, sobel_mask);
+    [Ix, Iy] = getSobelGradients(grayFrame);
 
     Ix2 = Ix.*Ix;
     Iy2 = Iy.*Iy;
@@ -45,6 +44,6 @@ function [im_patches ] = selectGoodFeatures(firstFrame, patchsize, topK)
     Pby2 = int32(patchsize/2);
     im_patches = zeros(topK, patchsize, patchsize);
     for i=1:topK,
-        im_patches(i, :, :) = grayFirstFrame(y_good(i) - Pby2: y_good(i) + Pby2 - 1, x_good(i) - Pby2: x_good(i) + Pby2 - 1);
+        im_patches(i, :, :) = grayFrame(y_good(i) - Pby2: y_good(i) + Pby2 - 1, x_good(i) - Pby2: x_good(i) + Pby2 - 1);
     end
 end
