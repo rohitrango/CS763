@@ -1,4 +1,4 @@
-function [im_patches, x_good, y_good ] = selectGoodFeatures(grayFrame, patchsize, topK)
+function [im_patches, x_good, y_good ] = selectGoodFeatures(grayFrame, patchsize, topK, disp_image)
     % Get good patches, and their coordinates given the frame, patch size,
     % and top K patches to pick from
     [H, W, ~] = size(grayFrame);
@@ -13,11 +13,15 @@ function [im_patches, x_good, y_good ] = selectGoodFeatures(grayFrame, patchsize
     y = y(filter_edges);
 
     % Display first frame and overlay the features
-    %colormap gray;
-    %imagesc(grayFrame);
-    %hold on;
-    %scatter(x, y);
-    %hold off;
+    if disp_image == 1
+        colormap gray;
+        imagesc(grayFrame);
+        hold on;
+        scatter(x, y);
+        hold off;
+        waitforbuttonpress;
+        close all;
+    end
 
     [Ix, Iy] = getSobelGradients(grayFrame);
 

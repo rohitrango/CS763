@@ -5,36 +5,52 @@ clc;
 %% Your Code Here
 % number of frames
 % parameters here
-patchsize = 40;
-topK = 5;
+patchsize = 60;
+noOfFeatures = 5;
 NITERS = 100;
+N = 247;
 
 % patch offset for cropping 
 offset = int32(patchsize/2);
 
+Frames = zeros([N,480,640]);
 % get jacobian
 % 2 * 6 * P
 jacobian_matrix = get_jacobian_matrix(patchsize);
 
 % Start
-for i=1:247
+
+for i=1:N
     % Read starting frame
     if mod(i, 10) == 1
         % Read from frame        
         firstFrame = im2double(imread(sprintf('../input/%d.jpg', i)));
-        [template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, topK);
+        Frames(i,:,:) = firstFrame;
+        if i == 1
+            [template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 1);
+        else
+            [template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 0);
+        end
+
+       for patchNum = 1:noOfFeatures
+           trackedPoints(i, 1, patchNum) = x_good(patchNum);
+           trackedPoints(i, 2, patchNum) = y_good(patchNum);
+       end
+
     else
         % Subsequent frames, run your algorithm on it 
         % estimate empty affine matrix
         % initialize new patches
         nFrame = im2double(imread(sprintf('../input/%d.jpg', i)));
-        p = zeros(topK, 2, 3);
+        Frames(i,:,:) = nFrame;
+
+        p = zeros(noOfFeatures, 2, 3);
         p(:, 1, 1) = 1;
         p(:, 2, 2) = 1;
         new_patches = zeros(size(template_patches));
         
         % Solve for each patch
-        for patchNum = 1:topK
+        for patchNum = 1:noOfFeatures
            % Iteratively solve the optimization
            xg = x_good(patchNum);
            yg = y_good(patchNum);              
@@ -42,16 +58,27 @@ for i=1:247
            % frame
            for iters = 1:NITERS
               % Init errors to all zeros
-              error = zeros(topK); 
+              error = zeros(noOfFeatures); 
               % Get current affine matrix, warped image
               affMat = squeeze(p(patchNum, :, :));
               tform = affine2d([affMat; 0, 0, 1]');
               warpedIm = imwarp(nFrame, tform);
+
+              % Getting the warpedIm to be the same size as template
+              [htemp, wtemp] = size(warpedIm);
+              if htemp < 480
+                warpedIm = [warpedIm; zeros([480-htemp, wtemp])];
+              end
+              [htemp, wtemp] = size(warpedIm);
+              if wtemp < 640
+                warpedIm = [warpedIm, zeros([htemp, 640-wtemp])];
+              end  
+
               new_patches(patchNum, :, :) = warpedIm(yg - offset:yg+offset-1, xg - offset:xg + offset-1);
                 
               % Calculate L2 error
               error(patchNum) = mean(mean((new_patches(patchNum, :, :) - template_patches(patchNum, :, :)).^2));
-              fprintf('Error : %f\n', error(patchNum));
+              fprintf('Frame : %d Patchnum: %d, Error : %f\n', i, patchNum, error(patchNum));
               
               % Image gradients
               [Ix, Iy] = getSobelGradients(warpedIm);
@@ -82,11 +109,21 @@ for i=1:247
               % Add this error to p
               TIW = sum(TIW, 2)';
               TIW = TIW*H;
-              p(patchNum, :, :) = p(patchNum, :, :) + permute(reshape(TIW, 1, 3, 2), [1, 3, 2]);
-       
+              p(patchNum, :, :) = p(patchNum, :, :) + 0.1*permute(reshape(TIW, 1, 3, 2), [1, 3, 2]);
+
+              if error(patchNum) < 0.001
+                break
+              end
            end
-        end
-        
+
+           % Storing the coordinates of the tracked Point
+           affMat = squeeze(p(patchNum, :, :));
+           affInv = inv([affMat; 0, 0, 1]);
+           coord  = affInv*[double(xg);double(yg);1];
+           trackedPoints(i, 1, patchNum) = coord(1);
+           trackedPoints(i, 2, patchNum) = coord(2);
+
+        end        
     end
 end
 
@@ -102,12 +139,20 @@ end
 noOfPoints = 1;
 for i=1:N
     NextFrame = Frames(i,:,:);
-    imshow(uint8(NextFrame)); hold on;
+    ColFrame = zeros([480,640,3]);
+    
+    ColFrame(:,:,1) = NextFrame;
+    ColFrame(:,:,2) = NextFrame;
+    ColFrame(:,:,3) = NextFrame;
+
+    ColFrame = ColFrame * 255;
+    imshow(uint8(ColFrame)); 
+    hold on;
     for nF = 1:noOfFeatures
         plot(trackedPoints(1:noOfPoints, 1, nF), trackedPoints(1:noOfPoints, 2, nF),'*')
     end
     hold off;
-    saveas(gcf, strcat('output/',num2str(i),'.jpg'));
+    saveas(gcf, strcat('../output/',num2str(i),'.jpg'));
     close all;
     noOfPoints = noOfPoints + 1;
 end 
