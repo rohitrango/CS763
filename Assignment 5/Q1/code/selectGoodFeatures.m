@@ -50,4 +50,14 @@ function [im_patches, x_good, y_good ] = selectGoodFeatures(grayFrame, patchsize
     for i=1:topK,
         im_patches(i, :, :) = grayFrame(y_good(i) - Pby2: y_good(i) + Pby2 - 1, x_good(i) - Pby2: x_good(i) + Pby2 - 1);
     end
+    % Display first frame and overlay the features
+    if disp_image == 1
+        colormap gray;
+        imagesc(grayFrame);
+        hold on;
+        scatter(x_good(1:topK), y_good(1:topK));
+        hold off;
+        waitforbuttonpress;
+        close all;
+    end
 end

@@ -9,11 +9,14 @@ patchsize = 60;
 noOfFeatures = 5;
 NITERS = 100;
 N = 247;
-
+lambda = 1;
 % patch offset for cropping 
 offset = int32(patchsize/2);
 
-Frames = zeros([N,480,640]);
+firstFrame = im2double(imread(sprintf('../input/1.jpg')));
+[h,w]  =  size(firstFrame);
+Frames = zeros([N,h,w]);
+
 % get jacobian
 % 2 * 6 * P
 jacobian_matrix = get_jacobian_matrix(patchsize);
@@ -66,12 +69,12 @@ for i=1:N
 
               % Getting the warpedIm to be the same size as template
               [htemp, wtemp] = size(warpedIm);
-              if htemp < 480
-                warpedIm = [warpedIm; zeros([480-htemp, wtemp])];
+              if htemp < h
+                warpedIm = [warpedIm; zeros([h-htemp, wtemp])];
               end
               [htemp, wtemp] = size(warpedIm);
-              if wtemp < 640
-                warpedIm = [warpedIm, zeros([htemp, 640-wtemp])];
+              if wtemp < w
+                warpedIm = [warpedIm, zeros([htemp, w-wtemp])];
               end  
 
               new_patches(patchNum, :, :) = warpedIm(yg - offset:yg+offset-1, xg - offset:xg + offset-1);
@@ -109,7 +112,8 @@ for i=1:N
               % Add this error to p
               TIW = sum(TIW, 2)';
               TIW = TIW*H;
-              p(patchNum, :, :) = p(patchNum, :, :) + 0.1*permute(reshape(TIW, 1, 3, 2), [1, 3, 2]);
+              size(p(patchNum, :, :))
+              p(patchNum, :, :) = p(patchNum, :, :) + lambda*permute(reshape(TIW, 1, 3, 2), [1, 3, 2]);
 
               if error(patchNum) < 0.001
                 break
@@ -139,7 +143,7 @@ end
 noOfPoints = 1;
 for i=1:N
     NextFrame = Frames(i,:,:);
-    ColFrame = zeros([480,640,3]);
+    ColFrame = zeros([h,w,3]);
     
     ColFrame(:,:,1) = NextFrame;
     ColFrame(:,:,2) = NextFrame;
