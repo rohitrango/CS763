@@ -6,7 +6,7 @@ clc;
 % number of frames
 % parameters here
 patchsize = 60;
-noOfFeatures = 5;
+noOfFeatures = 2;
 NITERS = 100;
 N = 247;
 lambda = 1;
@@ -25,10 +25,14 @@ jacobian_matrix = get_jacobian_matrix(patchsize);
 
 for i=1:N
     % Read starting frame
-    if mod(i, 10) == 1
+    if mod(i, 5) == 1
         % Read from frame        
         firstFrame = im2double(imread(sprintf('../input/%d.jpg', i)));
         Frames(i,:,:) = firstFrame;
+
+        % Smoothing the image to remove noise
+        firstFrame = imgaussfilt(firstFrame, 3);
+
         if i == 1
             [template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 1);
         else
@@ -112,7 +116,7 @@ for i=1:N
               % Add this error to p
               TIW = sum(TIW, 2)';
               TIW = TIW*H;
-              size(p(patchNum, :, :))
+
               p(patchNum, :, :) = p(patchNum, :, :) + lambda*permute(reshape(TIW, 1, 3, 2), [1, 3, 2]);
 
               if error(patchNum) < 0.001
