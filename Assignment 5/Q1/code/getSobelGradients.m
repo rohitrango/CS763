@@ -7,5 +7,4 @@ function [Ix, Iy] = getSobelGradients(grayFrame)
     % Smoothing the gradients as suggested in PS
     Ix = imgaussfilt(Ix, 1);
     Iy = imgaussfilt(Iy, 1);
-
 end

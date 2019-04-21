@@ -5,9 +5,9 @@ clc;
 %% Your Code Here
 % number of frames
 % parameters here
-patchsize = 40;
+patchsize = 6;
 noOfFeatures = 2;
-NITERS = 20;
+NITERS = 100;
 N = 247;
 lambda = 0.7;
 sigma = 2;
@@ -42,8 +42,8 @@ for i=1:N
 
 		% Smoothing the image to remove noise
 		firstFrame = imgaussfilt(firstFrame, sigma);
-        [template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 1, [140, 190], [240, 280]);
-%         [template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 1, [0, 1000], [0, 1000]);
+%         [template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 1, [140, 190], [240, 280]);
+        [template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 1, [0, 1000], [0, 1000]);
 
        % Store the tracked points here
 	   for patchNum = 1:noOfFeatures
@@ -74,26 +74,17 @@ for i=1:N
 			  error = zeros(noOfFeatures); 
 			  % Get current affine matrix, warped image
 			  affMat = squeeze(p(patchNum, :, :));  % 2 * 3
-
+              
               % Get forward operation
               [xx, yy] = meshgrid(1:patchsize);
-              xx = xx + double(xg) - patchsize/2;
-              yy = yy + double(yg) - patchsize/2;
-              coord_old = ones(3, patchsize*patchsize);
-              coord_old(1, :) = xx(:);
-              coord_old(2, :) = yy(:);
-              % Get new coords = 2 * 1600
-              coord_new = affMat*coord_old;
-              xx_new = reshape(coord_new(1, :), patchsize, patchsize);
-              yy_new = reshape(coord_new(2, :), patchsize, patchsize);
-              % Get image coordinates from here
-              warpedIm = interp2(nFrame, xx_new, yy_new);
-              warpedIm(isnan(warpedIm)) = 0;
+              xx = xx + double(xg);
+              yy = yy + double(yg);
+              coord_old = ones(3, patch
               
-              % Get new patches, also take care of gradients
-              new_patches(patchNum, :, :) = warpedIm;
-              [IxCrop, IyCrop] = getSobelGradients(warpedIm);
-
+                
+              
+              
+              
               
 % 			  tform = affine2d([affMat; 0, 0, 1]');
 % 			  warpedIm = imwarp(nFrame, tform);
@@ -107,16 +98,16 @@ for i=1:N
 % 			  if wtemp < w
 % 				warpedIm = [warpedIm, zeros([htemp, w-wtemp])];
 % 			  end  
-% 			  new_patches(patchNum, :, :) = warpedIm(yg - offset:yg+offset-1, xg - offset:xg + offset-1);
+			  new_patches(patchNum, :, :) = warpedIm(yg - offset:yg+offset-1, xg - offset:xg + offset-1);
 				
 			  % Calculate L2 error
 			  error(patchNum) = mean(mean((new_patches(patchNum, :, :) - template_patches(patchNum, :, :)).^2));
 			  fprintf('Frame : %d Patchnum: %d, Error : %f\n', i, patchNum, error(patchNum));
 
 			  % Image gradients
-			  % [Ix, Iy] = getSobelGradients(warpedIm);
-			  % IxCrop = Ix(yg - offset:yg+offset-1, xg - offset:xg + offset-1);
-			  % IyCrop = Iy(yg - offset:yg+offset-1, xg - offset:xg + offset-1);
+			  [Ix, Iy] = getSobelGradients(warpedIm);
+			  IxCrop = Ix(yg - offset:yg+offset-1, xg - offset:xg + offset-1);
+			  IyCrop = Iy(yg - offset:yg+offset-1, xg - offset:xg + offset-1);
 			  
 			  % Find delI = 2 * 1600
 			  delI = zeros(2, patchsize*patchsize);
@@ -144,15 +135,6 @@ for i=1:N
 			  TIW = sum(TIW, 2)';
 			  TIW = TIW*H;
 
-%               delP = zeros(1, 2, 3);
-%               delP(1, 1, 1) = TIW(1);
-%               delP(1, 1, 2) = TIW(3);
-%               delP(1, 1, 3) = TIW(5);
-%               delP(1, 2, 1) = TIW(2);
-%               delP(1, 2, 2) = TIW(4);
-%               delP(1, 2, 3) = TIW(6);
-              
-%               p(patchNum, :, :) = p(patchNum, :, :) + 1e-2*delP;
 % 			  p(patchNum, :, :) = p(patchNum, :, :) + lambda*permute(reshape(TIW, 1, 3, 2), [1, 3, 2]);
               p(patchNum, :, :) = p(patchNum, :, :) + permute(reshape(TIW, 1, 3, 2), [1, 3, 2]);
 
@@ -164,7 +146,7 @@ for i=1:N
 		   % Storing the coordinates of the tracked Point
 		   affMat = squeeze(p(patchNum, :, :));
 		   affInv = inv([affMat; 0, 0, 1]);
-		   coord  = affInv*[double(xg); double(yg); 1];
+		   coord  = affInv*[double(xg);double(yg);1];
 		   trackedPoints(i, 1, patchNum) = coord(1);
 		   trackedPoints(i, 2, patchNum) = coord(2);
 
@@ -173,7 +155,7 @@ for i=1:N
 		end        
 		% Displaying the tracked points on the frames for debugging %
 		NextFrame = Frames(i,:,:);
-		ColFrame = zeros([h, w, 3]);		    
+		ColFrame = zeros([h,w,3]);		    
 		ColFrame(:,:,1) = NextFrame;
 		ColFrame(:,:,2) = NextFrame;
 		ColFrame(:,:,3) = NextFrame;
