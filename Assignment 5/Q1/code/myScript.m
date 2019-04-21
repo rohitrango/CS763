@@ -9,7 +9,7 @@ patchsize = 60;
 noOfFeatures = 2;
 NITERS = 100;
 N = 247;
-lambda = 1;
+lambda = 0.7;
 
 % patch offset for cropping 
 offset = int32(patchsize/2);
@@ -25,12 +25,16 @@ Frames = zeros([N,h,w]);
 % 2 * 6 * P
 jacobian_matrix = get_jacobian_matrix(patchsize);
 
+p = zeros(noOfFeatures, 2, 3);
+p(:, 1, 1) = 1;
+p(:, 2, 2) = 1;
+
 % Start
 noOfPoints = 1;
 
 for i=1:N	
 	% Read starting frame
-	if mod(i, 100) == 1
+	if mod(i, 20) == 1
 		% Read from frame        
 		firstFrame = im2double(imread(sprintf('../input/%d.jpg', i)));
 		Frames(i,:,:) = firstFrame;
@@ -38,7 +42,12 @@ for i=1:N
 		% Smoothing the image to remove noise
 		firstFrame = imgaussfilt(firstFrame, 3);
 
-		[template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 1);
+
+		if i == 1
+			[template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 1, [140, 190], [240, 280]);
+		else
+			[template_patches, x_good, y_good] = selectGoodFeatures(firstFrame, patchsize, noOfFeatures, 1, [140, 190], [240, 280]);
+		end
 
 	   for patchNum = 1:noOfFeatures
 		   trackedPoints(i, 1, patchNum) = x_good(patchNum);
@@ -55,9 +64,6 @@ for i=1:N
 		nFrame = imgaussfilt(nFrame, 3);
 
 
-		p = zeros(noOfFeatures, 2, 3);
-		p(:, 1, 1) = 1;
-		p(:, 2, 2) = 1;
 		new_patches = zeros(size(template_patches));
 		
 		% Solve for each patch
@@ -65,8 +71,8 @@ for i=1:N
 		   % Iteratively solve the optimization
 		   xg = x_good(patchNum);
 		   yg = y_good(patchNum);              
-		   % For every patch, calculate the new patch from the current
-		   % frame
+		   % For every patch, calculate the new patch from the current frame
+
 		   for iters = 1:NITERS
 			  % Init errors to all zeros
 			  error = zeros(noOfFeatures); 
@@ -123,9 +129,9 @@ for i=1:N
 
 			  p(patchNum, :, :) = p(patchNum, :, :) + lambda*permute(reshape(TIW, 1, 3, 2), [1, 3, 2]);
 
-			  if error(patchNum) < 0.001
-				break
-			  end
+			 %  if error(patchNum) < 0.001
+				% break
+			 %  end
 		   end
 
 		   % Storing the coordinates of the tracked Point
@@ -187,4 +193,3 @@ for i=1:N
 	close all;
 	noOfPoints = noOfPoints + 1;
 end 
-   

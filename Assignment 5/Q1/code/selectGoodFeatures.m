@@ -1,4 +1,4 @@
-function [im_patches, x_good, y_good ] = selectGoodFeatures(grayFrame, patchsize, topK, disp_image)
+function [im_patches, x_good, y_good ] = selectGoodFeatures(grayFrame, patchsize, topK, disp_image, bound_x, bound_y)
     % Get good patches, and their coordinates given the frame, patch size,
     % and top K patches to pick from
     [H, W, ~] = size(grayFrame);
@@ -7,10 +7,16 @@ function [im_patches, x_good, y_good ] = selectGoodFeatures(grayFrame, patchsize
     x = points(:, 1);
     y = points(:, 2);
 
-    filter_edges = (x > patchsize/2)&(x <= W - patchsize/2);
-    filter_edges = filter_edges&(y > patchsize/2)&(y <= H - patchsize/2);
+    filter_edges = (x > patchsize/2) & (x <= W - patchsize/2);
+    filter_edges = filter_edges & (y > patchsize/2) & (y <= H - patchsize/2);
     x = x(filter_edges);
     y = y(filter_edges);
+
+    % Trying to find features in a particular box for debugging optimization code
+    filter_bound = (x > bound_x(1)) & (x < bound_x(2));
+    filter_bound = filter_bound & (y > bound_y(1)) & (y < bound_y(2));
+    x = x(filter_bound);
+    y = y(filter_bound);
 
     % Display first frame and overlay the features
     if disp_image == 1

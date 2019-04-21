@@ -8,5 +8,5 @@ function jacobian = get_jacobian_matrix(patchsize)
     
     jacobian(2, 4, :) = xx(:);
     jacobian(2, 5, :) = yy(:);
-    jacobian(2, 6, :) = 1;    
+    jacobian(2, 6, :) = 1;
 end
